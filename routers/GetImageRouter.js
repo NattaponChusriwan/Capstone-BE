@@ -13,10 +13,13 @@ router.get("/", async (req, res) => {
       .skip(skip)
       .limit(limit)
       .populate({
-        path: 'userId',
-        select: 'username', // Only retrieve the 'username' field
+        path: "userId",
+        select: "username", // Only retrieve the 'username' field
+      })
+      .populate({
+        path: "category", // Replace "_id" with the actual field name in your Image schema
+        select: "category", // Only retrieve the 'category' field
       });
-
     if (!findImages || findImages.length === 0) {
       return res.json({
         success: false,
@@ -26,13 +29,13 @@ router.get("/", async (req, res) => {
 
     const AllImages = findImages.map((image) => ({
       _id: image._id,
-      userId: image.userId ? image.userId._id : null,
       username: image.userId ? image.userId.username : null,
       title: image.title,
       sale: image.sale,
       description: image.description,
       image: image.image,
       price: image.price,
+      category: image.category ? image.category.category : null,
       updateTime: image.uploadTime,
     }));
 
