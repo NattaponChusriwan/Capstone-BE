@@ -4,6 +4,8 @@ const cors = require("cors");
 const ImageRouter = require("./routers/ImageRouter");
 const GetImageRouter = require("./routers/GetImageRouter");
 const UserRouter = require("./routers/UserRouter");
+const GetImageDetailRouter = require('./routers/GetImageDeailRouter');
+
 const { jwtValidate } = require("./middleware/jwt");
 require("dotenv").config();
 require("./config/db").connect();
@@ -15,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/image", jwtValidate, ImageRouter);
 app.use("/api/images", GetImageRouter);
 app.use("/api/user", UserRouter);
+app.use("/api/detail", GetImageDetailRouter)
 
 const PORT = 8080;
 app.listen(PORT, function () {

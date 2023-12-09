@@ -4,6 +4,7 @@ const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const validator = require("validator");
 const User = require("../Schema/UserSchema");
 const {
   jwtGenerate,
@@ -27,6 +28,19 @@ const storageRef = ref(storage);
 router.post("/register", upload.single("image"), async (req, res) => {
   try {
     const { email, phone, username, password } = req.body;
+    if (!validator.isEmail(email)) {
+      return res.status(400).send("Email is not valid");
+    }
+    const thaiMobileRegex = /^(\+66|0)-?([1-9]\d{8})$/;
+    if (!thaiMobileRegex.test(phone)) {
+      return res.status(400).send("Phone is not a valid Thai mobile number");
+    }
+    if(!validator.isLength(username, {min: 6, max: 20})){
+      return res.status(400).send("Username is not valid");
+    }
+    if(!validator.isStrongPassword(password)){
+      return res.status(400).send("Password is not valid");
+    }
     if (!(email && phone && username && password)) {
       res.status(400).send("All input is required");
     }
@@ -189,13 +203,12 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     });
   }
 });
-router.post('/logout',async (req, res) => {
+router.post("/logout", async (req, res) => {
   try {
-
     res.status(200).json({
       message: "Logout successful",
     });
-  }catch (error) {
+  } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error during login" });
   }
