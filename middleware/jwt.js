@@ -3,9 +3,9 @@ const dotenv = require("dotenv");
 
 const jwtGenerate = (user) => {
   const accessToken = jwt.sign(
-    { userId: user._Id, role: user.role },
+    { userId: user._id},
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "3h", algorithm: "HS256" }
+    { expiresIn: "3h", algorithm: "HS256"}
   );
 
   return accessToken;
@@ -14,7 +14,7 @@ const jwtGenerate = (user) => {
 const jwtRefreshTokenGenerate = (user) => {
   try {
     const refreshToken = jwt.sign(
-      { userId: user._id, role: user.role },
+      { userId: user._id},
       process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: "1d", algorithm: "HS256" }
     );

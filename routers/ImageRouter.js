@@ -4,6 +4,7 @@ const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 const Image = require("../Schema/ImageSchema");
 const Category = require("../Schema/CategorySchema");
+const jwt = require("jsonwebtoken");
 const { initializeApp } = require("firebase/app");
 const {
   getStorage,
@@ -144,7 +145,19 @@ router.put("/:id", upload.single("image"), async (req, res) => {
 });
 router.delete("/:id", async (req, res) => {
   try {
+    const secretKey = process.env.ACCESS_TOKEN_SECRET;
     const objectId = req.params.id;
+    const token = req.headers.authorization;
+    const actualToken = token.split(' ')[1];
+    const decoded = jwt.verify(actualToken, secretKey);
+    
+    // Assuming objectId has a userId property
+    if (objectId.userId && objectId.userId !== decoded.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "You don't have permission",
+      });
+    }
     const deletedObject = await Image.findOneAndDelete(objectId);
     if (!deletedObject) {
       return res.status(404).json({
@@ -156,17 +169,16 @@ router.delete("/:id", async (req, res) => {
       success: true,
       message: "Object deleted successfully",
     });
-    if (res.status(200)) {
-      const imageRef = ref(storage, deletedObject.image);
-      deleteObject(imageRef).then(() => {
-        console.log("Delete success for delete image");
-      });
-    }
+    // Assuming storage and ref are properly set up
+    const imageRef = ref(storage, deletedObject.image);
+    deleteObject(imageRef).then(() => {
+      console.log("Delete success for delete image");
+    });
   } catch (error) {
     console.error(error);
     res.status(400).json({
       success: false,
-      message: "Error to delete image ",
+      message: "Error deleting image",
     });
   }
 });
