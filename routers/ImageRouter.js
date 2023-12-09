@@ -17,46 +17,6 @@ initializeApp(config.firebaseConfig);
 const storage = getStorage();
 const storageRef = ref(storage);
 
-// router.get("/", async (req, res) => {
-//   const page = parseInt(req.query.page) || 1;
-//   const limit = parseInt(req.query.limit) || 30;
-//   const skip = (page - 1) * limit;
-//   try {
-//     const totalImages = await Image.countDocuments();
-//     const findImages = await Image.find().skip(skip).limit(limit);
-
-//     if (!findImages || findImages.length === 0) {
-//       return res.json({
-//         success: false,
-//         message: "Images not found",
-//       });
-//     }
-//     const AllImages = findImages.map((image) => ({
-//       _id: image._id,
-//       userId: image.userId,
-//       title: image.title,
-//       sales: image.sale,
-//       description: image.description,
-//       uploadTime: image.uploadTime,
-//       images: image.image,
-//       price: image.price,
-//     }));
-
-//     res.json({
-//       success: true,
-//       AllImages,
-//       page,
-//       totalPages: Math.ceil(totalImages / limit),
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(400).json({
-//       success: false,
-//       message: "Error fetching images",
-//     });
-//   }
-// });
-
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const imageBuffer = req.file.buffer;
@@ -150,7 +110,7 @@ router.put("/:id", upload.single("image"), async (req, res) => {
       user_id: req.body.user_id,
       image: newDownloadURL,
       description: req.body.description,
-      sales: req.body.sales,
+      sale: req.body.sales,
       price: req.body.price,
       category: categoryID,
       updateTime: new Date(),

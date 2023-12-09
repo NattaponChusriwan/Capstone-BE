@@ -20,11 +20,11 @@ router.get("/", async (req, res) => {
       _id: image._id,
       userId: image.userId,
       title: image.title,
-      sales: image.sale,
+      sale: image.sale,
       description: image.description,
-      uploadTime: image.uploadTime,
-      images: image.image,
+      image: image.image,
       price: image.price,
+      updateTime: image.uploadTime,
     }));
 
     res.json({
@@ -56,9 +56,9 @@ router.get("/:id", async (req, res) => {
       _id: uploadedImage._id,
       user_id: uploadedImage.userId,
       titel: uploadedImage.title,
-      images: uploadedImage.image,
+      image: uploadedImage.image,
       description: uploadedImage.description,
-      sales: uploadedImage.sale,
+      sale: uploadedImage.sale,
       price: uploadedImage.price,
       category: uploadedImage.category,
       updateTime: uploadedImage.updateTime,
