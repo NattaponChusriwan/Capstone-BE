@@ -1,14 +1,21 @@
 const express = require("express");
 const router = require("express").Router();
 const Image = require("../Schema/ImageSchema");
-
+const User = require("../Schema/UserSchema");
 router.get("/", async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 30;
   const skip = (page - 1) * limit;
+
   try {
     const totalImages = await Image.countDocuments();
-    const findImages = await Image.find().skip(skip).limit(limit);
+    const findImages = await Image.find()
+      .skip(skip)
+      .limit(limit)
+      .populate({
+        path: 'userId',
+        select: 'username', // Only retrieve the 'username' field
+      });
 
     if (!findImages || findImages.length === 0) {
       return res.json({
@@ -16,9 +23,11 @@ router.get("/", async (req, res) => {
         message: "Images not found",
       });
     }
+
     const AllImages = findImages.map((image) => ({
       _id: image._id,
-      userId: image.userId,
+      userId: image.userId ? image.userId._id : null,
+      username: image.userId ? image.userId.username : null,
       title: image.title,
       sale: image.sale,
       description: image.description,
