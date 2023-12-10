@@ -20,7 +20,12 @@ const storageRef = ref(storage);
 
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const userId = req.body.userId;
+    const secretKey = process.env.ACCESS_TOKEN_SECRET;
+    const token = req.headers.authorization;
+    const actualToken = token.split(" ")[1];
+    const decoded = jwt.verify(actualToken, secretKey);
+    const userId = decoded.userId;
+
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -51,7 +56,7 @@ router.post("/", upload.single("image"), async (req, res) => {
     }
 
     const image = new Image({
-      userId: req.body.userId,
+      userId: userId,
       title: req.body.title,
       description: req.body.description,
       image: downloadURL,
@@ -73,7 +78,7 @@ router.post("/", upload.single("image"), async (req, res) => {
     });
   }
 });
-router.put("/:id", upload.single("image"), async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
     const objectId = req.params.id;
     const UpdateObject = await Image.findById(objectId);
@@ -96,13 +101,12 @@ router.put("/:id", upload.single("image"), async (req, res) => {
         message: "You don't have permission",
       });
     }
-
-    const imageBuffer = req.file.buffer;
-    const newFilename = `${Date.now()}_${req.file.originalname}`;
-    const newFileRef = ref(storage, `images/images/${newFilename}`);
-    const metadata = { contentType: req.file.mimetype };
-    await uploadBytesResumable(newFileRef, imageBuffer, metadata);
-    const newDownloadURL = await getDownloadURL(newFileRef);
+    // const imageBuffer = req.file.buffer;
+    // const newFilename = `${Date.now()}_${req.file.originalname}`;
+    // const newFileRef = ref(storage, `images/images/${newFilename}`);
+    // const metadata = { contentType: req.file.mimetype };
+    // await uploadBytesResumable(newFileRef, imageBuffer, metadata);
+    // const newDownloadURL = await getDownloadURL(newFileRef);
     let categoryID = null;
     const existingCategory = await Category.findOne({
       category: req.body.category,
@@ -120,7 +124,7 @@ router.put("/:id", upload.single("image"), async (req, res) => {
 
     const updateData = {
       title: req.body.title,
-      image: newDownloadURL,
+      // image: newDownloadURL,
       description: req.body.description,
       sale: req.body.sales,
       price: req.body.price,
@@ -140,12 +144,12 @@ router.put("/:id", upload.single("image"), async (req, res) => {
       updatedImage,
     });
 
-    if (res.status(200)) {
-      const imageRef = ref(storage, UpdateObject.image);
-      deleteObject(imageRef).then(() => {
-        console.log("Delete success for update image");
-      });
-    }
+    // if (res.status(200)) {
+    //   const imageRef = ref(storage, UpdateObject.image);
+    //   deleteObject(imageRef).then(() => {
+    //     console.log("Delete success for update image");
+    //   });
+    // }
   } catch (error) {
     console.error(error);
     res.status(400).json({
