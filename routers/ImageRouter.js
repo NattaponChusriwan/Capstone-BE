@@ -20,6 +20,13 @@ const storageRef = ref(storage);
 
 router.post("/", upload.single("image"), async (req, res) => {
   try {
+    const userId = req.body.userId;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
     const imageBuffer = req.file.buffer;
     // Save image to Firebase
     const filename = `${Date.now()}_${req.file.originalname}`;
@@ -77,8 +84,13 @@ router.put("/:id", upload.single("image"), async (req, res) => {
         message: "Object not found",
       });
     }
+    const secretKey = process.env.ACCESS_TOKEN_SECRET;
+    const token = req.headers.authorization;
+    const actualToken = token.split(" ")[1];
+    const decoded = jwt.verify(actualToken, secretKey);
 
-    if (UpdateObject.userId !== req.body.userId) {
+    // Assuming objectId has a userId property
+    if (objectId.userId && objectId.userId !== decoded.userId) {
       return res.status(401).json({
         success: false,
         message: "You don't have permission",
@@ -108,7 +120,6 @@ router.put("/:id", upload.single("image"), async (req, res) => {
 
     const updateData = {
       title: req.body.title,
-      user_id: req.body.user_id,
       image: newDownloadURL,
       description: req.body.description,
       sale: req.body.sales,
@@ -148,9 +159,9 @@ router.delete("/:id", async (req, res) => {
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
     const objectId = req.params.id;
     const token = req.headers.authorization;
-    const actualToken = token.split(' ')[1];
+    const actualToken = token.split(" ")[1];
     const decoded = jwt.verify(actualToken, secretKey);
-    
+
     // Assuming objectId has a userId property
     if (objectId.userId && objectId.userId !== decoded.userId) {
       return res.status(401).json({

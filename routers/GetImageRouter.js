@@ -2,11 +2,11 @@ const express = require("express");
 const router = require("express").Router();
 const Image = require("../Schema/ImageSchema");
 const User = require("../Schema/UserSchema");
+
 router.get("/", async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 30;
   const skip = (page - 1) * limit;
-
   try {
     const totalImages = await Image.countDocuments();
     const findImages = await Image.find()
@@ -14,11 +14,11 @@ router.get("/", async (req, res) => {
       .limit(limit)
       .populate({
         path: "userId",
-        select: "username", // Only retrieve the 'username' field
+        select: "username",
       })
       .populate({
-        path: "category", // Replace "_id" with the actual field name in your Image schema
-        select: "category", // Only retrieve the 'category' field
+        path: "category",
+        select: "category",
       });
     if (!findImages || findImages.length === 0) {
       return res.json({
@@ -80,6 +80,42 @@ router.get("/:id", async (req, res) => {
     res.status(400).json({
       success: false,
       message: "Error to get image",
+    });
+  }
+});
+router.get("/", async (req, res) => {
+  try {
+    const categoryId = req.query.categoryId;
+    if (!categoryId) {
+      return res.status(400).json({
+        success: false,
+        message: "Category ID parameter is missing",
+      });
+    }
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category ID",
+      });
+    }
+    const filterImages = await Image.find({
+      category: new mongoose.Types.ObjectId(categoryId),
+    });
+    if (!filterImages || filterImages.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Images not found for the given category ID",
+      });
+    }
+    return res.json({
+      success: true,
+      filterImages,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching images",
     });
   }
 });

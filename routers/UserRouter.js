@@ -35,10 +35,10 @@ router.post("/register", upload.single("image"), async (req, res) => {
     if (!thaiMobileRegex.test(phone)) {
       return res.status(400).send("Phone is not a valid Thai mobile number");
     }
-    if(!validator.isLength(username, {min: 6, max: 20})){
+    if (!validator.isLength(username, { min: 6, max: 20 })) {
       return res.status(400).send("Username is not valid");
     }
-    if(!validator.isStrongPassword(password)){
+    if (!validator.isStrongPassword(password)) {
       return res.status(400).send("Password is not valid");
     }
     if (!(email && phone && username && password)) {
@@ -77,11 +77,18 @@ router.post("/login", async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
-    const isPasswordValid = await bcrypt.compare(req.body.password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      req.body.password,
+      user.password
+    );
     if (!isPasswordValid) {
-      return res.status(401).json({ success: false, message: "Invalid password" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid password" });
     }
     const access_token = jwtGenerate(user);
     const refresh_token = jwtRefreshTokenGenerate(user);
