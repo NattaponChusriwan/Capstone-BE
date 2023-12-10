@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
     if (!findImages || findImages.length === 0) {
       return res.json({
         success: false,
-        message: "Images not found",
+        message: "No image",
       });
     }
 

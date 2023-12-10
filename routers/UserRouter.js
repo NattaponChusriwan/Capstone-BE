@@ -5,6 +5,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
+const mongoose = require("mongoose");
 const User = require("../Schema/UserSchema");
 const {
   jwtGenerate,
@@ -28,6 +29,7 @@ const storageRef = ref(storage);
 router.post("/register", async (req, res) => {
   try {
     const { email, phone, username, password } = req.body;
+
     if (!(email && phone && username && password)) {
       return res.status(400).send("All input is required");
     }
@@ -142,28 +144,48 @@ router.post("/refresh", jwtRefreshTokenValidate, async (req, res) => {
     return res.status(500).json({ error: "Error during token refresh" });
   }
 });
-router.put("/:id", upload.single("image"), async (req, res) => {
+
+router.put("/", upload.single("image"), async (req, res) => {
+  const secretKey = process.env.ACCESS_TOKEN_SECRET;
+  const token = req.headers.authorization;
+  const actualToken = token.split(" ")[1];
+
   try {
-    const userId = req.params.id;
-    const updateUser = await User.findById(userId);
+    const decoded = jwt.verify(actualToken, secretKey);
+    const updateUser = await User.findById(decoded.userId);
+
     if (!updateUser) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
-    if (updateUser.user_id !== req.body.user_id) {
+
+    // Use decoded.user directly in the comparison
+    if (updateUser.userId !== decoded.user) {
       return res.status(401).json({
         success: false,
         message: "You don't have permission",
       });
     }
-    const imageBuffer = req.file.buffer;
-    const newFilename = `${Date.now()}_${req.file.originalname}`;
-    const newFileRef = ref(storage, `images/profile/${newFilename}`);
-    const metadata = { contentType: req.file.mimetype };
-    await uploadBytesResumable(newFileRef, imageBuffer, metadata);
-    const newDownloadURL = await getDownloadURL(newFileRef);
+
+    let newDownloadURL = updateUser.profile_image; // Use the existing image URL by default
+
+    if (req.file) {
+      // Image upload logic
+      const imageBuffer = req.file.buffer;
+      const newFilename = `${Date.now()}_${req.file.originalname}`;
+      const newFileRef = ref(storage, `images/profile/${newFilename}`);
+      const metadata = { contentType: req.file.mimetype };
+      await uploadBytesResumable(newFileRef, imageBuffer, metadata);
+      newDownloadURL = await getDownloadURL(newFileRef);
+
+      // Delete old profile image from storage if it exists
+      if (updateUser.profile_image !== null && updateUser.profile_image !== undefined) {
+        const imageRef = ref(storage, updateUser.profile_image);
+        await deleteObject(imageRef);
+      }
+    }
 
     const encryptedPassword = await bcrypt.hash(req.body.password, 10);
 
@@ -176,37 +198,38 @@ router.put("/:id", upload.single("image"), async (req, res) => {
       updateTime: new Date(),
     };
 
-    if (res.status(200)) {
-      const imageRef = ref(storage, updateUser.profile_image);
-      deleteObject(imageRef).then(() => {
-        console.log("Delete success for update image");
-      });
-    }
     const updatedUser = await User.findOneAndUpdate(
-      { _id: req.params.id },
+      { _id: decoded.userId },
       updateData,
       { new: true }
     );
-    if (!updatedUser) {
-      res.status(404).json({
-        success: false,
-        message: "Object not found",
-      });
-    } else {
-      res.json({
-        success: true,
-        message: "File updated successfully",
-        updatedUser,
-      });
-    }
+
+    console.log("Updated User:", updatedUser);
+    res.json({
+      success: true,
+      message: "File updated successfully",
+      updatedUser,
+    });
   } catch (error) {
     console.error(error);
-    res.status(400).json({
+    res.status(500).json({
       success: false,
-      message: "Error to update user",
+      message: "Error updating user",
     });
   }
 });
+
+router.post("/logout", async (req, res) => {
+  try {
+    res.status(200).json({
+      message: "Logout successful",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error during login" });
+  }
+});
+
 router.post("/logout", async (req, res) => {
   try {
     res.status(200).json({
