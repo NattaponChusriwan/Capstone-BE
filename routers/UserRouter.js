@@ -25,44 +25,43 @@ initializeApp(config.firebaseConfig);
 const storage = getStorage();
 const storageRef = ref(storage);
 
-router.post("/register", upload.single("image"), async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
     const { email, phone, username, password } = req.body;
+    if (!(email && phone && username && password)) {
+      return res.status(400).send("All input is required");
+    }
+
     if (!validator.isEmail(email)) {
       return res.status(400).send("Email is not valid");
     }
+
     const thaiMobileRegex = /^(\+66|0)-?([1-9]\d{8})$/;
     if (!thaiMobileRegex.test(phone)) {
       return res.status(400).send("Phone is not a valid Thai mobile number");
     }
+
     if (!validator.isLength(username, { min: 6, max: 20 })) {
       return res.status(400).send("Username is not valid");
     }
+
     if (!validator.isStrongPassword(password)) {
       return res.status(400).send("Password is not valid");
     }
-    if (!(email && phone && username && password)) {
-      res.status(400).send("All input is required");
-    }
+    const encryptedPassword = await bcrypt.hash(req.body.password, 10);
     const oldUser = await User.findOne({ email, phone, username });
     if (oldUser) {
       return res.status(400).send("User Already Exist. Please Login Again");
     }
-    const imageBuffer = req.file.buffer;
-    const encryptedPassword = await bcrypt.hash(req.body.password, 10); // Use req.body.password for hashing
-    const filename = `${Date.now()}_${req.file.originalname}`;
-    const fileRef = ref(storageRef, `images/profile/${filename}`);
-    const metadata = { contentType: req.file.mimetype };
-    await uploadBytesResumable(fileRef, imageBuffer, metadata);
-    const downloadURL = await getDownloadURL(fileRef);
 
+    // Assuming encryptedPassword is defined elsewhere in your code
     const newUser = new User({
       email: req.body.email,
       password: encryptedPassword,
-      profile_image: downloadURL,
       phone: req.body.phone,
       username: req.body.username,
     });
+
     await newUser.save();
 
     res.status(201).json({
