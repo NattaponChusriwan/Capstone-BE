@@ -197,4 +197,48 @@ router.delete("/:id", async (req, res) => {
     });
   }
 });
+router.get("/userImages", async (req, res) => {
+  try {
+    const secretKey = process.env.ACCESS_TOKEN_SECRET;
+    const token = req.headers.authorization;
+    const actualToken = token.split(" ")[1];
+    const decoded = jwt.verify(actualToken, secretKey);
+    const userId = decoded.userId;
+    const userImage = await Image.find({ userId: userId })
+      .populate({
+        path: "userId",
+        select: "username",
+      })
+      .populate({
+        path: "category",
+        select: "category",
+      });
+    if (!userImage || userImage.length === 0) {
+      return res.json({
+        success: false,
+        message: "Image not found",
+      });
+    }
+    const userImages = userImage.map((image) => ({
+      _id: image._id,
+      username: image.userId ? image.userId.username : null,
+      title: image.title,
+      sale: image.sale,
+      description: image.description,
+      image: image.image,
+      price: image.price,
+      category: image.category ? image.category.category : null,
+      updateTime: image.uploadTime,
+    }));
+    res.json({
+      success: true,
+      userImages,
+    });
+  } catch (err) {
+    res.json({
+      success: false,
+      message: err,
+    });
+  }
+});
 module.exports = router;
