@@ -56,7 +56,15 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const objectId = req.params.id;
-    const uploadedImage = await Image.findById(objectId);
+    const uploadedImage = await Image.findById(objectId)
+    .populate({
+      path: "userId",
+      select: "username",
+    })
+    .populate({
+      path: "category",
+      select: "category",
+    });
 
     if (!uploadedImage) {
       return res.status(404).json({
@@ -66,13 +74,13 @@ router.get("/:id", async (req, res) => {
     }
     res.json({
       _id: uploadedImage._id,
-      user_id: uploadedImage.userId,
-      titel: uploadedImage.title,
+      username: uploadedImage.userId ? uploadedImage.userId.username : null,
+      title: uploadedImage.title,
       image: uploadedImage.image,
       description: uploadedImage.description,
       sale: uploadedImage.sale,
       price: uploadedImage.price,
-      category: uploadedImage.category,
+      category: uploadedImage.category ? uploadedImage.category.category : null,
       updateTime: uploadedImage.updateTime,
     });
   } catch (error) {
@@ -83,40 +91,40 @@ router.get("/:id", async (req, res) => {
     });
   }
 });
-router.get("/", async (req, res) => {
-  try {
-    const categoryId = req.query.categoryId;
-    if (!categoryId) {
-      return res.status(400).json({
-        success: false,
-        message: "Category ID parameter is missing",
-      });
-    }
-    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid category ID",
-      });
-    }
-    const filterImages = await Image.find({
-      category: new mongoose.Types.ObjectId(categoryId),
-    });
-    if (!filterImages || filterImages.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Images not found for the given category ID",
-      });
-    }
-    return res.json({
-      success: true,
-      filterImages,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching images",
-    });
-  }
-});
+// router.get("/", async (req, res) => {
+//   try {
+//     const categoryId = req.query.categoryId;
+//     if (!categoryId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Category ID parameter is missing",
+//       });
+//     }
+//     if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid category ID",
+//       });
+//     }
+//     const filterImages = await Image.find({
+//       category: new mongoose.Types.ObjectId(categoryId),
+//     });
+//     if (!filterImages || filterImages.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Images not found for the given category ID",
+//       });
+//     }
+//     return res.json({
+//       success: true,
+//       filterImages,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Error fetching images",
+//     });
+//   }
+// });
 module.exports = router;

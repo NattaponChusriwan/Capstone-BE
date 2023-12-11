@@ -64,7 +64,7 @@ router.post("/", async (req, res) => {
     const filteredImage = filterImages.map((image) => ({
       _id: image._id,
       username: image.userId ? image.userId.username : null,
-      title: image.title,
+      titel: image.titel,
       sale: image.sale,
       description: image.description,
       image: image.image,
