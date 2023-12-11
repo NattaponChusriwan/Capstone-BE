@@ -26,7 +26,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.get("/filter", async (req, res) => {
   try {
     const categoryId = req.query.categoryId;
     if (!categoryId) {
