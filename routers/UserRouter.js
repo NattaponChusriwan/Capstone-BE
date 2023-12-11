@@ -146,11 +146,10 @@ router.post("/refresh", jwtRefreshTokenValidate, async (req, res) => {
 });
 
 router.put("/", upload.single("image"), async (req, res) => {
-  const secretKey = process.env.ACCESS_TOKEN_SECRET;
-  const token = req.headers.authorization;
-  const actualToken = token.split(" ")[1];
-
   try {
+    const secretKey = process.env.ACCESS_TOKEN_SECRET;
+    const token = req.headers.authorization;
+    const actualToken = token.split(" ")[1];
     const decoded = jwt.verify(actualToken, secretKey);
     const updateUser = await User.findById(decoded.userId);
 
