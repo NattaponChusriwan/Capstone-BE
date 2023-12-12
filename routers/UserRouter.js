@@ -30,11 +30,14 @@ router.post("/register", async (req, res) => {
   try {
     const { email, phone, username, password } = req.body;
 
-    if (!(email && phone && username && password)) {
+    const emailLower = email.toLowerCase();
+    console.log(emailLower);
+
+    if (!(emailLower && phone && username && password)) {
       return res.status(400).send("All input is required");
     }
 
-    if (!validator.isEmail(email)) {
+    if (!validator.isEmail(emailLower)) {
       return res.status(400).send("Email is not valid");
     }
 
@@ -51,14 +54,14 @@ router.post("/register", async (req, res) => {
       return res.status(400).send("Password is not valid");
     }
     const encryptedPassword = await bcrypt.hash(req.body.password, 10);
-    const oldUser = await User.findOne({ email, phone, username });
+    const oldUser = await User.findOne({ email: emailLower, phone, username });
     if (oldUser) {
       return res.status(400).send("User Already Exist. Please Login Again");
     }
 
     // Assuming encryptedPassword is defined elsewhere in your code
     const newUser = new User({
-      email: req.body.email,
+      email: emailLower,
       password: encryptedPassword,
       phone: req.body.phone,
       username: req.body.username,
@@ -76,14 +79,17 @@ router.post("/register", async (req, res) => {
 });
 router.post("/login", async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
+    const { email, password } = req.body;
+    const emailLower = email.toLowerCase();
+    console.log(emailLower);
+    const user = await User.findOne({ email: emailLower });
     if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
     const isPasswordValid = await bcrypt.compare(
-      req.body.password,
+      password,
       user.password
     );
     if (!isPasswordValid) {
@@ -180,7 +186,10 @@ router.put("/", upload.single("image"), async (req, res) => {
       newDownloadURL = await getDownloadURL(newFileRef);
 
       // Delete old profile image from storage if it exists
-      if (updateUser.profile_image !== null && updateUser.profile_image !== undefined) {
+      if (
+        updateUser.profile_image !== null &&
+        updateUser.profile_image !== undefined
+      ) {
         const imageRef = ref(storage, updateUser.profile_image);
         await deleteObject(imageRef);
       }
