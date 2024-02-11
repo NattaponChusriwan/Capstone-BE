@@ -6,6 +6,10 @@ const Image = require("../Schema/ImageSchema");
 const Category = require("../Schema/CategorySchema");
 const mongoose = require('mongoose');
 const jwt = require("jsonwebtoken");
+const nsfwjs = require("nsfwjs");
+const tf = require("@tensorflow/tfjs-node");
+// const mobileNet = require("@tensorflow-models/mobilenet");
+const sharp = require("sharp");
 const { initializeApp } = require("firebase/app");
 const {
   getStorage,
@@ -18,69 +22,110 @@ const config = require("../config/firebase");
 initializeApp(config.firebaseConfig);
 const storage = getStorage();
 const storageRef = ref(storage);
+const { ImageAnnotatorClient } = require('@google-cloud/vision');
+const client = new ImageAnnotatorClient({ keyFilename: './config/key.json' });
+
+let modelNude
+
+async function loadModel() {
+  modelNude = await nsfwjs.load();
+}
+
+loadModel();
 
 const createImage = async (req, res) => {
-    try {
-      const secretKey = process.env.ACCESS_TOKEN_SECRET;
-      const token = req.headers.authorization;
-      const actualToken = token.split(' ')[1];
-      const decoded = jwt.verify(actualToken, secretKey);
-      const userId = decoded.userId;
-  
-      if (!userId) {
-        return res.status(400).json({
-          success: false,
-          message: 'User not found',
-        });
-      }
-  
-      const imageBuffer = req.file.buffer;
-      // Save image to Firebase
-      const filename = `${Date.now()}_${req.file.originalname}`;
-      const fileRef = ref(storageRef, `images/images/${filename}`);
-      const metadata = { contentType: req.file.mimetype };
-      await uploadBytesResumable(fileRef, imageBuffer, metadata);
-      const downloadURL = await getDownloadURL(fileRef);
-  
-      let categoryID = null;
-      const existingCategory = await Category.findOne({
-        category: req.body.category,
-      });
-  
-      if (existingCategory) {
-        categoryID = existingCategory._id;
-      } else {
-        const newCategory = new Category({
-          category: req.body.category,
-        });
-        const savedCategory = await newCategory.save();
-        categoryID = savedCategory._id;
-      }
-  
-      const image = new Image({
-        userId: userId,
-        title: req.body.title,
-        description: req.body.description,
-        image: downloadURL,
-        sale: req.body.sale,
-        price: req.body.price,
-        category: categoryID,
-      });
-  
-      const savedImage = await image.save();
-      res.json({
-        success: true,
-        message: 'Image saved successfully',
-        savedImage,
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({
+  try {
+    const secretKey = process.env.ACCESS_TOKEN_SECRET;
+    const token = req.headers.authorization;
+    const actualToken = token.split(' ')[1];
+    const decoded = jwt.verify(actualToken, secretKey);
+    const userId = decoded.userId;
+
+    if (!userId) {
+      return res.status(400).json({
         success: false,
-        message: 'Error saving the image',
+        message: 'User not found',
       });
     }
-  };
+
+    const imageBuffer = req.file.buffer;
+
+    // Decode and resize the image using sharp
+    const resizedImageBuffer = await sharp(imageBuffer)
+      .resize(224, 224)
+      .toFormat("jpeg")
+      .toBuffer();
+
+    // Convert the resized buffer to a tensor
+    const imageTensor = tf.node.decodeImage(resizedImageBuffer);
+
+    const predictions = await modelNude.classify(imageTensor);
+    console.log(predictions);
+
+    const pornProbability = predictions.find(
+      (prediction) => prediction.className === "Porn"
+    )?.probability;
+
+    const hentaiProbability = predictions.find(
+      (prediction) => prediction.className === "Hentai"
+    )?.probability;
+
+    if (pornProbability > 0.8 || hentaiProbability > 0.8) {
+      return res.status(400).json({
+        message: "Image contains inappropriate content",
+      });
+    }
+    const [result] = await client.labelDetection(req.file.buffer);
+    const labels = result.labelAnnotations;
+    const tag = labels[0].description;
+    // Save image to Firebase
+    const filename = `${Date.now()}_${req.file.originalname}`
+    const fileRef = ref(storageRef, `images/images/${userId}/${filename}`);
+    const metadata = { contentType: req.file.mimetype };
+    await uploadBytesResumable(fileRef, imageBuffer, metadata);
+    const downloadURL = await getDownloadURL(fileRef);
+
+    let categoryID = null;
+    const existingCategory = await Category.findOne({
+      category: tag,
+    });
+
+    if (existingCategory) {
+      categoryID = existingCategory._id;
+    } else {
+      const newCategory = new Category({
+        category: tag,
+      });
+      const savedCategory = await newCategory.save();
+      categoryID = savedCategory._id;
+    }
+
+    const image = new Image({
+      userId: userId,
+      title: req.body.title,
+      description: req.body.description,
+      image: downloadURL,
+      sale: req.body.sale,
+      price: req.body.price,
+      category: categoryID,
+    });
+
+    const savedImage = await image.save();
+    res.json({
+      success: true,
+      message: 'Image saved successfully',
+      savedImage,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: 'Error saving the image',
+    });
+  }
+};
+
+
   const updateImage = async (req, res) => {
     try {
       const objectId = req.params.id;

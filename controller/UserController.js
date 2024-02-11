@@ -5,6 +5,8 @@ const upload = multer({ storage: multer.memoryStorage() });
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
+const dotenv = require("dotenv");
+dotenv.config();
 const User = require("../Schema/UserSchema");
 const {
   jwtGenerate,
@@ -24,66 +26,87 @@ const config = require("../config/firebase");
 initializeApp(config.firebaseConfig);
 const storage = getStorage();
 const storageRef = ref(storage);
+const nodemailer = require("nodemailer");
 
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 const registerUser = async (req, res) => {
-    try {
-      const { email, phone, username, password } = req.body;
-  
+  try {
+      const { email, username, password } = req.body;
+
       const emailLower = email.toLowerCase();
-  
-      if (!(emailLower && phone && username )) {
-        return res.status(400).send("All input is required");
+
+      if (!(emailLower && username )) {
+          return res.status(400).send("All input is required");
       }
-  
+
       if (!validator.isEmail(emailLower)) {
-        return res.status(400).send("Email is not valid");
+          return res.status(400).send("Email is not valid");
       }
-  
-      const thaiMobileRegex = /^(\+66|0)-?([1-9]\d{8})$/;
-      if (!thaiMobileRegex.test(phone)) {
-        return res.status(400).send("Phone is not a valid Thai mobile number");
-      }
-  
+
       if (!validator.isLength(username, { min: 6, max: 20 })) {
-        return res.status(400).send("Username is not valid");
+          return res.status(400).send("Username is not valid");
       }
-  
+
       if (!validator.isStrongPassword(password)) {
-        return res.status(400).send("Password is not valid");
+          return res.status(400).send("Password is not valid");
       }
-  
+
       const encryptedPassword = await bcrypt.hash(password, 10);
-  
-      const oldUser = await User.findOne({ email: emailLower, phone, username });
+
+      const oldUser = await User.findOne({ email: emailLower, username });
       if (oldUser) {
-        return res.status(400).send("User Already Exists. Please Login Again");
+          return res.status(400).send("User Already Exists. Please Login Again");
       }
-  
+
       const newUser = new User({
-        email: emailLower,
-        password: encryptedPassword,
-        phone,
-        username,
+          email: emailLower,
+          password: encryptedPassword,
+          username,
       });
-  
       await newUser.save();
-  
+      const verificationToken = newUser.generateVerificationToken();
+      const url = `${process.env.BASE_URL}/${verificationToken}`|| `http://localhost:8080/api/user/verify/${verificationToken}`;
+      transporter.sendMail(
+          {
+              to: email,
+              subject: "Verify your email",
+              html: `Click <a href = '${url}'>here</a> to confirm your email.`
+          },
+          (error, info) => {
+              if (error) {
+                  console.log(error);
+              } else {
+                  console.log("Email sent: " + info.response);
+              }
+          }
+      );
       res.status(201).json({
-        newUser,
+          newUser,
+          message: `Sent a verification email to ${email}`
       });
-    } catch (error) {
+  } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Error during registration" });
-    }
-  };
+  }
+};
+
   const loginUser = async (req, res) => {
     try {
       const { email, password } = req.body;
       const emailLower = email.toLowerCase();
-      console.log(emailLower);
       const user = await User.findOne({ email: emailLower });
       if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
+      }
+      if(!user.isVerified){
+        return res.status(403).json({ success: false, message: "Please verify your email" });
       }
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
@@ -214,6 +237,33 @@ const registerUser = async (req, res) => {
       });
     }
   };
+  const verifyEmail = async (req, res) => {
+    const {token} = req.params
+
+    if(!token){
+      return res.status(400).send("Invalid token")
+    }
+    let playload = null
+    try {
+      playload = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET)
+    } catch (error) {
+      return res.status(400).send("Invalid token")
+    }
+    try{
+      const user = await User.findById({_id:playload._id}).exec()
+      if(!user){
+        return res.status(400).send("User not found")
+      }
+      user.isVerified = true;
+      await user.save()
+
+
+      res.status(200).send("Your email has been verified")
+    }catch(error){
+      console.error(error)
+      res.status(500).send("Error during verification")
+    }
+  }
   module.exports = {
-    registerUser,loginUser,refreshTokens,updateUser
+    registerUser,loginUser,refreshTokens,updateUser,verifyEmail
   };
