@@ -6,10 +6,6 @@ const Image = require("../Schema/ImageSchema");
 const Category = require("../Schema/CategorySchema");
 const mongoose = require('mongoose');
 const jwt = require("jsonwebtoken");
-const nsfwjs = require("nsfwjs");
-const tf = require("@tensorflow/tfjs-node");
-// const mobileNet = require("@tensorflow-models/mobilenet");
-const sharp = require("sharp");
 const { initializeApp } = require("firebase/app");
 const {
   getStorage,
@@ -25,13 +21,6 @@ const storageRef = ref(storage);
 const { ImageAnnotatorClient } = require('@google-cloud/vision');
 const client = new ImageAnnotatorClient({ keyFilename: './config/key.json' });
 
-let modelNude
-
-async function loadModel() {
-  modelNude = await nsfwjs.load();
-}
-
-loadModel();
 
 const createImage = async (req, res) => {
   try {
@@ -50,29 +39,44 @@ const createImage = async (req, res) => {
 
     const imageBuffer = req.file.buffer;
 
-    // Decode and resize the image using sharp
-    const resizedImageBuffer = await sharp(imageBuffer)
-      .resize(224, 224)
-      .toFormat("jpeg")
-      .toBuffer();
+    // // Decode and resize the image using sharp
+    // const resizedImageBuffer = await sharp(imageBuffer)
+    //   .resize(224, 224)
+    //   .toFormat("jpeg")
+    //   .toBuffer();
 
-    // Convert the resized buffer to a tensor
-    const imageTensor = tf.node.decodeImage(resizedImageBuffer);
+    // // Convert the resized buffer to a tensor
+    // const imageTensor = tf.node.decodeImage(resizedImageBuffer);
 
-    const predictions = await modelNude.classify(imageTensor);
-    console.log(predictions);
+    // const predictions = await modelNude.classify(imageTensor);
+    // console.log(predictions);
 
-    const pornProbability = predictions.find(
-      (prediction) => prediction.className === "Porn"
-    )?.probability;
+    // const pornProbability = predictions.find(
+    //   (prediction) => prediction.className === "Porn"
+    // )?.probability;
 
-    const hentaiProbability = predictions.find(
-      (prediction) => prediction.className === "Hentai"
-    )?.probability;
+    // const hentaiProbability = predictions.find(
+    //   (prediction) => prediction.className === "Hentai"
+    // )?.probability;
 
-    if (pornProbability > 0.8 || hentaiProbability > 0.8) {
+    // if (pornProbability > 0.8 || hentaiProbability > 0.8) {
+    //   return res.status(400).json({
+    //     message: "Image contains inappropriate content",
+    //   });
+    // }
+    const [resultInappropriate] = await client.safeSearchDetection(req.file.buffer);
+    const safeSearchAnnotation = resultInappropriate.safeSearchAnnotation;
+
+    // Check if the image contains inappropriate content
+    if (
+      safeSearchAnnotation.adult === 'VERY_LIKELY' ||
+      safeSearchAnnotation.violence === 'VERY_LIKELY' ||
+      safeSearchAnnotation.medical === 'VERY_LIKELY' ||
+      safeSearchAnnotation.racy === 'VERY_LIKELY'
+    ) {
       return res.status(400).json({
-        message: "Image contains inappropriate content",
+        success: false,
+        message: 'Image contains inappropriate content',
       });
     }
     const [result] = await client.labelDetection(req.file.buffer);

@@ -72,7 +72,7 @@ const registerUser = async (req, res) => {
       });
       await newUser.save();
       const verificationToken = newUser.generateVerificationToken();
-      const url = `${process.env.BASE_URL}/${verificationToken}`|| `http://localhost:8080/api/user/verify/${verificationToken}`;
+      const url = `http://localhost:8080/api/user/verify/${verificationToken}`;
       transporter.sendMail(
           {
               to: email,
