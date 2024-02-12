@@ -30,7 +30,7 @@ const getPaginatedImages = async (req, res) => {
       }
   
       // Map and format the paginated images
-      const paginatedImages = findImages.map((image) => ({
+      const AllImages  = findImages.map((image) => ({
         _id: image._id,
         username: image.userId ? image.userId.username : null,
         title: image.title,
@@ -45,7 +45,7 @@ const getPaginatedImages = async (req, res) => {
       // Return the paginated images along with pagination details
       res.json({
         success: true,
-        paginatedImages,
+        AllImages ,
         page,
         totalPages: Math.ceil(totalImages / limit),
       });
