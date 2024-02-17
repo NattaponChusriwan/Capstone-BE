@@ -12,9 +12,6 @@ const userSchema = new mongoose.Schema(
     username: {
       type: String,
     },
-    phone: {
-      type: String,
-    },
     profile_image: {
       type: String,
     },
@@ -36,14 +33,14 @@ const userSchema = new mongoose.Schema(
   },
   { versionKey: false }
 );
-userSchema.methods.generateVerificationToken = function () {
-  const user = this;
-  const verificationToken = jwt.sign(
-    { _id: user._id },
-    process.env.VERIFICATION_TOKEN_SECRET,
-    { expiresIn: "2h" }
-  );
-  return verificationToken;
-};
+// userSchema.methods.generateVerificationToken = function () {
+//   const user = this;
+//   const verificationToken = jwt.sign(
+//     { _id: user._id },
+//     process.env.VERIFICATION_TOKEN_SECRET,
+//     { expiresIn: "1h" }
+//   );
+//   return verificationToken;
+// };
 
 module.exports = mongoose.model("User", userSchema);

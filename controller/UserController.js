@@ -27,15 +27,9 @@ initializeApp(config.firebaseConfig);
 const storage = getStorage();
 const storageRef = ref(storage);
 const nodemailer = require("nodemailer");
-
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const Token = require("../Schema/TokenSchema");
+const crypto = require("crypto");
+const sendEmail = require("../middleware/sendEmail");
 const registerUser = async (req, res) => {
   try {
       const { email, username, password } = req.body;
@@ -71,26 +65,16 @@ const registerUser = async (req, res) => {
           username,
       });
       await newUser.save();
-      const verificationToken = newUser.generateVerificationToken();
-      const url = `${process.env.BASE_URL}/${verificationToken}` ||`http://localhost:8080/api/user/verify/${verificationToken}`;
-      transporter.sendMail(
-          {
-              to: email,
-              subject: "Verify your email",
-              html: `Click <a href = '${url}'>here</a> to confirm your email.`
-          },
-          (error, info) => {
-              if (error) {
-                  console.log(error);
-              } else {
-                  console.log("Email sent: " + info.response);
-              }
-          }
-      );
-      res.status(201).json({
-          newUser,
-          message: `Sent a verification email to ${email}`
+
+      let token =  new Token({
+        userId: newUser._id,
+        token: crypto.randomBytes(32).toString("hex"),
       });
+      await token.save();
+      const url = `${process.env.BASE_URL}/user/verify/${newUser._id}/${token.token}` 
+      console.log(url);
+      await sendEmail(newUser.email,"Verify your email",url)
+      res.send("An Email sent to your account please verify");
   } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Error during registration" });
@@ -238,32 +222,24 @@ const registerUser = async (req, res) => {
     }
   };
   const verifyEmail = async (req, res) => {
-    const {token} = req.params
-
-    if(!token){
-      return res.status(400).send("Invalid token")
-    }
-    let playload = null
     try {
-      playload = jwt.verify(token, process.env.VERIFICATION_TOKEN_SECRET)
-    } catch (error) {
-      return res.status(400).send("Invalid token")
-    }
-    try{
-      const user = await User.findById({_id:playload._id}).exec()
-      if(!user){
-        return res.status(400).send("User not found")
-      }
+      const user = await User.findOne({ _id: req.params.id });
+      if (!user) return res.status(400).send("Invalid link");
+  
+      const token = await Token.findOne({
+        userId: user._id,
+        token: req.params.token,
+      });
+      if (!token) return res.status(400).send("Invalid link");
       user.isVerified = true;
-      await user.save()
-
-
-      res.status(200).send("Your email has been verified")
-    }catch(error){
-      console.error(error)
-      res.status(500).send("Error during verification")
+      await user.save();
+      await token.deleteOne(token._id);
+      res.send("Email verified");
+    } catch (error) {
+      res.status(400).send("An error occured");
     }
   }
+  
   module.exports = {
     registerUser,loginUser,refreshTokens,updateUser,verifyEmail
   };

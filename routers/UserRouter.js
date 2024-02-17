@@ -7,6 +7,6 @@ const {registerUser,loginUser,updateUser,verifyEmail} = require("../controller/U
 router.post("/register",registerUser)
 router.post("/login",loginUser)
 router.put("/",upload.single('image'),updateUser)
-router.get("/verify/:token",verifyEmail)
+router.get("/verify/:id/:token",verifyEmail)
 
 module.exports = router;
