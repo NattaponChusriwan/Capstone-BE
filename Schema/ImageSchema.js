@@ -21,10 +21,10 @@ const imageSchema = new mongoose.Schema(
     price: {
       type: Number,
     },
-    category: {
+    category: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
-    },
+    }],
     uploadTime: {
       type: Date,
       default: Date.now,
