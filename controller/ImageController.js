@@ -39,31 +39,6 @@ const createImage = async (req, res) => {
 
     const imageBuffer = req.file.buffer;
 
-    // // Decode and resize the image using sharp
-    // const resizedImageBuffer = await sharp(imageBuffer)
-    //   .resize(224, 224)
-    //   .toFormat("jpeg")
-    //   .toBuffer();
-
-    // // Convert the resized buffer to a tensor
-    // const imageTensor = tf.node.decodeImage(resizedImageBuffer);
-
-    // const predictions = await modelNude.classify(imageTensor);
-    // console.log(predictions);
-
-    // const pornProbability = predictions.find(
-    //   (prediction) => prediction.className === "Porn"
-    // )?.probability;
-
-    // const hentaiProbability = predictions.find(
-    //   (prediction) => prediction.className === "Hentai"
-    // )?.probability;
-
-    // if (pornProbability > 0.8 || hentaiProbability > 0.8) {
-    //   return res.status(400).json({
-    //     message: "Image contains inappropriate content",
-    //   });
-    // }
     const [resultInappropriate] = await client.safeSearchDetection(req.file.buffer);
     const safeSearchAnnotation = resultInappropriate.safeSearchAnnotation;
 
@@ -81,28 +56,34 @@ const createImage = async (req, res) => {
     }
     const [result] = await client.labelDetection(req.file.buffer);
     const labels = result.labelAnnotations;
-    const tag = labels[0].description;
+    const tags = labels.map(label => label.description);
+    console.log(`Labels: ${tags}`);
+    const categoryIDs = [];
+    const tagsToSave = tags.slice(0, 4);
+    for (const tag of tagsToSave) {
+      let categoryID = null;
+      const existingCategory = await Category.findOne({
+        category: tag,
+      });
+
+      if (existingCategory) {
+        categoryID = existingCategory._id;
+      } else {
+        const newCategory = new Category({
+          category: tag,
+        });
+        const savedCategory = await newCategory.save();
+        categoryID = savedCategory._id;
+      }
+      categoryIDs.push(categoryID);
+    }
+console.log(categoryIDs);
     // Save image to Firebase
     const filename = `${Date.now()}_${req.file.originalname}`
     const fileRef = ref(storageRef, `images/images/${userId}/${filename}`);
     const metadata = { contentType: req.file.mimetype };
     await uploadBytesResumable(fileRef, imageBuffer, metadata);
     const downloadURL = await getDownloadURL(fileRef);
-
-    let categoryID = null;
-    const existingCategory = await Category.findOne({
-      category: tag,
-    });
-
-    if (existingCategory) {
-      categoryID = existingCategory._id;
-    } else {
-      const newCategory = new Category({
-        category: tag,
-      });
-      const savedCategory = await newCategory.save();
-      categoryID = savedCategory._id;
-    }
 
     const image = new Image({
       userId: userId,
@@ -111,7 +92,7 @@ const createImage = async (req, res) => {
       image: downloadURL,
       sale: req.body.sale,
       price: req.body.price,
-      category: categoryID,
+      category: categoryIDs,
     });
 
     const savedImage = await image.save();

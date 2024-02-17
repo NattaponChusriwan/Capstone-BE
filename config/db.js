@@ -10,11 +10,8 @@ exports.connect = () => {
 };
 
 setTimeout(async () => {
-  const expiredUsers = await User.find({
-      emailVerificationExpires: { $lt: new Date() }
+  await User.deleteMany({
+    isVerified: false,
+    emailVerificationExpires: { $lt: new Date() },
   });
-
-  expiredUsers.forEach(async (user) => {
-      await User.deleteOne({ _id: user._id });
-  });
-}, 60000); 
+}, 60000);
