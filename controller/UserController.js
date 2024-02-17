@@ -63,16 +63,16 @@ const registerUser = async (req, res) => {
           email: emailLower,
           password: encryptedPassword,
           username,
-      });
-      await newUser.save();
+      })
+      await newUser.save(); 
 
       let token =  new Token({
         userId: newUser._id,
-        token: crypto.randomBytes(32).toString("hex"),
+        token: jwt.sign({userId: newUser._id}, process.env.ACCESS_TOKEN_SECRET),
       });
       await token.save();
       const url = `${process.env.BASE_URL}/user/verify/${newUser._id}/${token.token}` 
-      console.log(url);
+      console.log(url)
       await sendEmail(newUser.email,"Verify your email",url)
       res.send("An Email sent to your account please verify");
   } catch (error) {
@@ -234,7 +234,7 @@ const registerUser = async (req, res) => {
       user.isVerified = true;
       await user.save();
       await token.deleteOne(token._id);
-      res.send("Email verified");
+      res.redirect(`${process.env.BASE_URL}/login`);
     } catch (error) {
       res.status(400).send("An error occured");
     }

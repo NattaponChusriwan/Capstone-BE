@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    emailVerificationExpires: {
+      type: Date,
+      default: () => new Date(+new Date() +  10 * 60 * 1000) 
+  },
     createTime: {
       type: Date,
       default: Date.now,
@@ -31,16 +35,8 @@ const userSchema = new mongoose.Schema(
       default: Date.now,
     },
   },
+  
   { versionKey: false }
 );
-// userSchema.methods.generateVerificationToken = function () {
-//   const user = this;
-//   const verificationToken = jwt.sign(
-//     { _id: user._id },
-//     process.env.VERIFICATION_TOKEN_SECRET,
-//     { expiresIn: "1h" }
-//   );
-//   return verificationToken;
-// };
 
 module.exports = mongoose.model("User", userSchema);
