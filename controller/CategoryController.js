@@ -5,29 +5,55 @@ const Category = require("../Schema/CategorySchema");
 const filterImages = async (req, res) => {
   try {
     const categoryId = req.query.categoryId;
+    const sale = req.query.sale;
+    const sortByDate = req.query.sortByDate;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 8;
     const skip = (page - 1) * limit;
+    const filterCriteria = {};
+    const sortCriteria = {};
 
-    if (!categoryId) {
+    if (categoryId) {
+      if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid category ID",
+        });
+      }
+    }
+
+    if (!categoryId && !sale && !sortByDate) {
       return res.status(400).json({
         success: false,
-        message: "Category ID parameter is missing",
+        message: "Please provide a filter criteria",
       });
     }
-    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid category ID",
-      });
-    }
+
     const totalImages = await Image.countDocuments();
 
-    const filterImages = await Image.find({
-      category: new mongoose.Types.ObjectId(categoryId),
-    })
+    if (categoryId) {
+      filterCriteria.category = new mongoose.Types.ObjectId(categoryId);
+    }
+
+    if (sale) {
+      filterCriteria.sale = sale;
+    }
+
+    if (sortByDate) {
+      if (sortByDate !== "asc" && sortByDate !== "desc") {
+        return res.status(400).json({
+          success: false,
+          message: "Please provide a sortByDate criteria as asc or desc",
+        });
+      } else {
+        sortCriteria.uploadTime = sortByDate === "asc" ? 1 : -1;
+      }
+    }
+
+    const filterImages = await Image.find(filterCriteria)
       .skip(skip)
       .limit(limit)
+      .sort(sortCriteria)
       .populate({
         path: "userId",
         select: "username",
@@ -40,7 +66,7 @@ const filterImages = async (req, res) => {
     if (!filterImages || filterImages.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Images not found for the given category ID",
+        message: "Images not found for the given category ID && sale",
       });
     }
 
