@@ -196,7 +196,6 @@ const registerUser = async (req, res) => {
         email: req.body.email,
         username: req.body.username,
         password: encryptedPassword,
-        phone: req.body.phone,
         profile_image: newDownloadURL,
         updateTime: new Date(),
       };
@@ -223,6 +222,55 @@ const registerUser = async (req, res) => {
   };
   const verifyEmail = async (req, res) => {
     try {
+        const user = await User.findOne({ _id: req.params.id });
+        if (!user) return res.status(400).send("Invalid link");
+
+        const token = await Token.findOne({
+            userId: user._id,
+            token: req.params.token,
+        });
+        if (!token) return res.status(400).send("Invalid link");
+
+        user.isVerified = true;
+        user.emailVerificationExpires = null; // Set emailVerificationExpires to null
+        await user.save();
+        await token.deleteOne(token._id);
+
+        res.redirect('http://capstone23.sit.kmutt.ac.th/tt2/');
+    } catch (error) {
+        res.status(400).send("An error occurred");
+    }
+};
+  const forgotPassword = async (req, res) => {
+    try {
+      const user = await User
+      .findOne
+      ({ email: req.body.email });
+      console.log(user);
+      if (!user) return res.status(400).send("User not found");
+      let token = new Token({
+        userId: user._id,
+        token: jwt.sign({userId: user._id}, process.env.ACCESS_TOKEN_SECRET),
+      });
+      await token.save();
+      const url = `${process.env.BASE_URL}/user/reset/${user._id}/${token.token}`;
+      console.log(url);
+      await sendEmail(user.email, "Reset your password", url);
+      res.send("Password reset link sent to your email account");
+    }
+    catch (error) {
+      res.status(400).send("An error occured");
+    }
+  }
+
+  const resetPassword = async (req, res) => {
+    try {
+      const { password } = req.body;
+
+      if (!validator.isStrongPassword(password)) {
+        return res.status(400).send("Password is not valid");
+      }
+
       const user = await User.findOne({ _id: req.params.id });
       if (!user) return res.status(400).send("Invalid link");
   
@@ -231,15 +279,26 @@ const registerUser = async (req, res) => {
         token: req.params.token,
       });
       if (!token) return res.status(400).send("Invalid link");
-      user.isVerified = true;
-      await user.save();
+
+      const encryptedPassword = await bcrypt.hash(password, 10);
+      const resetPassword = {
+        password: encryptedPassword,
+        updateTime: new Date(),
+      };
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: req.params.id },
+        resetPassword,
+        { new: true }
+      );
+      console.log("Updated User:", updatedUser);
       await token.deleteOne(token._id);
-      res.redirect(`${process.env.BASE_URL}/login`);
+      res.json({ message: "Password reset successfully", user: updatedUser });
     } catch (error) {
-      res.status(400).send("An error occured");
+      console.error(error);
+      res.status(400).send("An error occurred");
     }
-  }
-  
+}
+
   module.exports = {
-    registerUser,loginUser,refreshTokens,updateUser,verifyEmail
+    registerUser,loginUser,refreshTokens,updateUser,verifyEmail,forgotPassword,resetPassword
   };
