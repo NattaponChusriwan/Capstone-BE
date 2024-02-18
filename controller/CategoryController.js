@@ -20,6 +20,7 @@ const filterImages = async (req, res) => {
           message: "Invalid category ID",
         });
       }
+      filterCriteria.category = new mongoose.Types.ObjectId(categoryId);
     }
 
     if (!categoryId && !sale && !sortByDate) {
@@ -29,7 +30,7 @@ const filterImages = async (req, res) => {
       });
     }
 
-    const totalImages = await Image.countDocuments();
+    const totalImages = await Image.countDocuments(filterCriteria);
 
     if (categoryId) {
       filterCriteria.category = new mongoose.Types.ObjectId(categoryId);
@@ -78,7 +79,7 @@ const filterImages = async (req, res) => {
       description: image.description,
       image: image.image,
       price: image.price,
-      category: image.category ? image.category.category : null,
+      category: image.category ? image.category.map(cat => cat._id) : null,
       updateTime: image.uploadTime,
     }));
     return res.json({
