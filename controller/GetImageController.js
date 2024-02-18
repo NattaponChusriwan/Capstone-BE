@@ -1,5 +1,4 @@
 const Image = require("../Schema/ImageSchema");
-const User = require("../Schema/UserSchema");
 
 const getPaginatedImages = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
@@ -7,7 +6,6 @@ const getPaginatedImages = async (req, res) => {
     const skip = (page - 1) * limit;
   
     try {
-      // Query the database to get paginated images
       const totalImages = await Image.countDocuments();
       const findImages = await Image.find()
         .skip(skip)
@@ -20,16 +18,12 @@ const getPaginatedImages = async (req, res) => {
           path: 'category',
           select: 'category',
         });
-  
-      // Check if images were found
       if (!findImages || findImages.length === 0) {
         return res.json({
           success: false,
           message: 'No images found',
         });
       }
-  
-      // Map and format the paginated images
       const AllImages  = findImages.map((image) => ({
         _id: image._id,
         username: image.userId ? image.userId.username : null,
@@ -41,8 +35,6 @@ const getPaginatedImages = async (req, res) => {
         category: image.category ? image.category.category : null,
         updateTime: image.uploadTime,
       }));
-  
-      // Return the paginated images along with pagination details
       res.json({
         success: true,
         AllImages ,
@@ -60,8 +52,6 @@ const getPaginatedImages = async (req, res) => {
   const getImage = async (req, res) => {
     try {
       const objectId = req.params.id;
-  
-      // Query the database to get the image by ID
       const uploadedImage = await Image.findById(objectId)
         .populate({
           path: 'userId',
@@ -71,16 +61,12 @@ const getPaginatedImages = async (req, res) => {
           path: 'category',
           select: 'category',
         });
-  
-      // Check if the image was found
       if (!uploadedImage) {
         return res.status(404).json({
           success: false,
           message: 'Image not found',
         });
       }
-  
-      // Format the response
       const formattedImage = {
         _id: uploadedImage._id,
         username: uploadedImage.userId ? uploadedImage.userId.username : null,
@@ -92,8 +78,6 @@ const getPaginatedImages = async (req, res) => {
         category: uploadedImage.category ? uploadedImage.category.category : null,
         updateTime: uploadedImage.updateTime,
       };
-  
-      // Return the formatted image
       res.json(formattedImage);
     } catch (error) {
       console.error(error);

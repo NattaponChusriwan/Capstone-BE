@@ -98,18 +98,13 @@ const filterImages = async (req, res) => {
 };
 const getCategories = async (req, res) => {
   try {
-    // Query the database to get all categories
     const categories = await Category.find();
-
-    // Check if categories were found
     if (!categories || categories.length === 0) {
       return res.json({
         success: false,
         message: "Category not found",
       });
     }
-
-    // Return the categories
     res.json({
       success: true,
       categories,

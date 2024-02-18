@@ -8,11 +8,11 @@ const validator = require("validator");
 const dotenv = require("dotenv");
 dotenv.config();
 const User = require("../Schema/UserSchema");
+const { ImageAnnotatorClient } = require("@google-cloud/vision");
+const client = new ImageAnnotatorClient({ keyFilename: "./config/key.json" });
 const {
   jwtGenerate,
   jwtRefreshTokenGenerate,
-  jwtValidate,
-  jwtRefreshTokenValidate,
 } = require("../middleware/jwt");
 const { initializeApp } = require("firebase/app");
 const {
@@ -26,9 +26,7 @@ const config = require("../config/firebase");
 initializeApp(config.firebaseConfig);
 const storage = getStorage();
 const storageRef = ref(storage);
-const nodemailer = require("nodemailer");
 const Token = require("../Schema/TokenSchema");
-const crypto = require("crypto");
 const sendEmail = require("../middleware/sendEmail");
 const registerUser = async (req, res) => {
   try {
@@ -63,6 +61,7 @@ const registerUser = async (req, res) => {
           email: emailLower,
           password: encryptedPassword,
           username,
+          profile_image : process.env.DEFAULT_IMAGE,
       })
       await newUser.save(); 
 
@@ -98,14 +97,13 @@ const registerUser = async (req, res) => {
       }
       const access_token = jwtGenerate(user);
       const refresh_token = jwtRefreshTokenGenerate(user);
-      // Save the refresh token to the user document in your database or another secure location
       user.refresh = refresh_token;
       await user.save();
       res.status(200).json({
         success: true,
         message: "Login successful",
         user,
-        token: access_token,
+        access_token: access_token,
         refresh_token,
       });
     } catch (error) {
@@ -115,8 +113,8 @@ const registerUser = async (req, res) => {
   };
   const refreshTokens = async (req, res) => {
     try {
-      const { token } = req.body;
-      jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, async (err, decoded) => {
+      const { refresh_token } = req.body;
+      jwt.verify(refresh_token, process.env.REFRESH_TOKEN_SECRET, async (err, decoded) => {
         if (err) {
           return res.status(401).json({ error: "Invalid refresh token" });
         }
@@ -146,7 +144,8 @@ const registerUser = async (req, res) => {
       const actualToken = token.split(" ")[1];
       const decoded = jwt.verify(actualToken, secretKey);
       const updateUser = await User.findById(decoded.userId);
-  
+
+      
       if (!updateUser) {
         return res.status(404).json({
           success: false,
@@ -154,7 +153,6 @@ const registerUser = async (req, res) => {
         });
       }
   
-      // Use decoded.userId directly in the comparison
       if (updateUser._id.toString() !== decoded.userId) {
         return res.status(401).json({
           success: false,
@@ -162,18 +160,27 @@ const registerUser = async (req, res) => {
         });
       }
   
-      let newDownloadURL = updateUser.profile_image; // Use the existing image URL by default
+      let newDownloadURL = updateUser.profile_image; 
   
       if (req.file) {
-        // Image upload logic (update with your actual implementation)
         const imageBuffer = req.file.buffer;
+        const [resultInappropriate] = await client.safeSearchDetection(
+          req.file.buffer
+        );
+        const safeSearchAnnotation = resultInappropriate.safeSearchAnnotation;
+        if (
+          safeSearchAnnotation.adult === "VERY_LIKELY" ||
+          safeSearchAnnotation.violence === "VERY_LIKELY"
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "Image contains inappropriate content",
+          });
+        }
         const newFilename = `${Date.now()}_${req.file.originalname}`;
-        // Update these functions with your actual Firebase Storage methods
         const newFileRef = ref(storage, `images/profile/${newFilename}`);
         await uploadBytesResumable(newFileRef, imageBuffer, { contentType: req.file.mimetype });
         newDownloadURL = await getDownloadURL(newFileRef);
-  
-        // Delete old profile image from storage if it exists
         if (updateUser.profile_image) {
           const imageRef = ref(storage, updateUser.profile_image);
           await deleteObject(imageRef);
@@ -222,7 +229,7 @@ const registerUser = async (req, res) => {
         if (!token) return res.status(400).send("Invalid link");
 
         user.isVerified = true;
-        user.emailVerificationExpires = null; // Set emailVerificationExpires to null
+        user.emailVerificationExpires = null; 
         await user.save();
         await token.deleteOne(token._id);
 

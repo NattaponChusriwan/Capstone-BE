@@ -49,8 +49,6 @@ const createImage = async (req, res) => {
       req.file.buffer
     );
     const safeSearchAnnotation = resultInappropriate.safeSearchAnnotation;
-    console.log(`Safe search: ${safeSearchAnnotation}`);
-    // Check if the image contains inappropriate content
     if (
       safeSearchAnnotation.adult === "VERY_LIKELY" ||
       safeSearchAnnotation.violence === "VERY_LIKELY"
@@ -63,7 +61,6 @@ const createImage = async (req, res) => {
     const [result] = await client.labelDetection(req.file.buffer);
     const labels = result.labelAnnotations;
     const tags = labels.map((label) => label.description);
-    console.log(`Labels: ${tags}`);
     const categoryIDs = [];
     const tagsToSave = tags.slice(0, 4);
     for (const tag of tagsToSave) {
@@ -83,8 +80,6 @@ const createImage = async (req, res) => {
       }
       categoryIDs.push(categoryID);
     }
-    console.log(categoryIDs);
-    // Save image to Firebase
     const filename = `${Date.now()}_${req.file.originalname}`;
     const fileRef = ref(storageRef, `images/images/${userId}/${filename}`);
     const metadata = { contentType: req.file.mimetype };
@@ -198,8 +193,6 @@ const deleteImage = async (req, res) => {
     const token = req.headers.authorization;
     const actualToken = token.split(" ")[1];
     const decoded = jwt.verify(actualToken, secretKey);
-
-    // Assuming objectId has a userId property
     if (objectId.userId && objectId.userId !== decoded.userId) {
       return res.status(401).json({
         success: false,
@@ -220,7 +213,6 @@ const deleteImage = async (req, res) => {
       message: "Object deleted successfully",
     });
 
-    // Assuming storage and ref are properly set up
     const imageRef = ref(storage, deletedObject.image);
     deleteObject(imageRef).then(() => {
       console.log("Delete success for delete image");

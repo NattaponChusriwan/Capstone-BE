@@ -11,4 +11,5 @@ router.put("/",upload.single('image'),updateUser)
 router.get("/verify/:id/:token",verifyEmail)
 router.post("/forgot-password",forgotPassword)
 router.post("/reset/:id/:token",resetPassword)
+
 module.exports = router;
