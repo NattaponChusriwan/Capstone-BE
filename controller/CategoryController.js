@@ -98,13 +98,34 @@ const filterImages = async (req, res) => {
 };
 const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find();
+    const categoriesWithImages = await Category.aggregate([
+      {
+        $lookup: {
+          from: "images",
+          localField: "_id",
+          foreignField: "category",
+          as: "images",
+        },
+      },
+      {
+        $match: {
+          images: { $ne: [] },
+        },
+      },
+    ]);
+
+    const categories = categoriesWithImages.map(category => ({
+      _id: category._id,
+      category: category.category
+    }));
+
     if (!categories || categories.length === 0) {
       return res.json({
         success: false,
         message: "Category not found",
       });
     }
+
     res.json({
       success: true,
       categories,
@@ -117,5 +138,7 @@ const getCategories = async (req, res) => {
     });
   }
 };
+
+
 
 module.exports = { filterImages, getCategories };

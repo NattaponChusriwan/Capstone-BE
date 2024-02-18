@@ -6,7 +6,7 @@ const {registerUser,loginUser,updateUser,verifyEmail,forgotPassword,resetPasswor
 
 router.post("/register",registerUser)
 router.post("/login",loginUser)
-router.post("/refreshToken",refreshTokens)
+router.post("/refresh-token",refreshTokens)
 router.put("/",upload.single('image'),updateUser)
 router.get("/verify/:id/:token",verifyEmail)
 router.post("/forgot-password",forgotPassword)

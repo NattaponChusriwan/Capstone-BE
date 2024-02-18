@@ -128,7 +128,7 @@ const updateImage = async (req, res) => {
     const actualToken = token.split(" ")[1];
     const decoded = jwt.verify(actualToken, secretKey);
     const userIdString = updateObject.userId.toString();
-    console.log(decoded.userId, userIdString);
+
 
     if (userIdString !== decoded.userId) {
       return res.status(401).json({
@@ -137,28 +137,35 @@ const updateImage = async (req, res) => {
       });
     }
 
-    let categoryID = null;
-    const existingCategory = await Category.findOne({
-      category: req.body.category,
-    });
+    let categoryIDs = [];
+    if (req.body.category) {
+      const categories = req.body.category; // Assuming categories are sent as an array
 
-    if (existingCategory) {
-      categoryID = existingCategory._id;
+      categoryIDs = await Promise.all(categories.map(async (categoryName) => {
+        let categoryID = null;
+        const existingCategory = await Category.findOne({ category: categoryName });
+
+        if (existingCategory) {
+          categoryID = existingCategory._id;
+        } else {
+          const newCategory = new Category({ category: categoryName });
+          const savedCategory = await newCategory.save();
+          categoryID = savedCategory._id;
+        }
+
+        return categoryID;
+      }));
     } else {
-      const newCategory = new Category({
-        category: req.body.category,
-      });
-      const savedCategory = await newCategory.save();
-      categoryID = savedCategory._id;
+      // If no category is sent, use the existing categories associated with the image
+      categoryIDs = updateObject.category;
     }
 
     const updateData = {
       title: req.body.title,
-      // image: newDownloadURL,
       description: req.body.description,
       sale: req.body.sales,
       price: req.body.price,
-      category: categoryID,
+      category: categoryIDs, // Assuming your Image model has a field named 'categories' to store category IDs
       updateTime: new Date(),
     };
 
@@ -186,6 +193,8 @@ const updateImage = async (req, res) => {
     });
   }
 };
+
+
 const deleteImage = async (req, res) => {
   try {
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
@@ -258,7 +267,7 @@ const getUserImages = async (req, res) => {
       description: image.description,
       image: image.image,
       price: image.price,
-      category: image.category ? image.category.category : null,
+      category: image.category ? image.category.map(cat => cat._id) : null,
       updateTime: image.uploadTime,
     }));
 

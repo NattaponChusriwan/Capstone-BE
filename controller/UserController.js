@@ -178,7 +178,7 @@ const registerUser = async (req, res) => {
           });
         }
         const newFilename = `${Date.now()}_${req.file.originalname}`;
-        const newFileRef = ref(storage, `images/profile/${newFilename}`);
+        const newFileRef = ref(storage, `images/profile/${updateUser._id}/${newFilename}`);
         await uploadBytesResumable(newFileRef, imageBuffer, { contentType: req.file.mimetype });
         newDownloadURL = await getDownloadURL(newFileRef);
         if (updateUser.profile_image) {
@@ -186,12 +186,18 @@ const registerUser = async (req, res) => {
           await deleteObject(imageRef);
         }
       }
-  
+      let username = updateUser.username;
+      if(req.body.username){
+        if (!validator.isLength(req.body.username, { min: 6, max: 20 })) {
+          return res.status(400).send("Username is not valid");
+        }
+        username = req.body.username;
+      }
       const encryptedPassword = await bcrypt.hash(req.body.password, 10);
   
       const updateData = {
         email: req.body.email,
-        username: req.body.username,
+        username: username,
         password: encryptedPassword,
         profile_image: newDownloadURL,
         updateTime: new Date(),
@@ -202,8 +208,6 @@ const registerUser = async (req, res) => {
         updateData,
         { new: true }
       );
-  
-      console.log("Updated User:", updatedUser);
       res.json({
         success: true,
         message: "Profile updated successfully",
@@ -233,7 +237,7 @@ const registerUser = async (req, res) => {
         await user.save();
         await token.deleteOne(token._id);
 
-        res.redirect('http://capstone23.sit.kmutt.ac.th/tt2/');
+        res.redirect('http://capstone23.sit.kmutt.ac.th/tt2/login');
     } catch (error) {
         res.status(400).send("An error occurred");
     }
