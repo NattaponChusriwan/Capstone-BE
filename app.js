@@ -20,7 +20,6 @@ app.use("/api/images", GetImageRouter);
 app.use("/api/user", UserRouter);
 app.use("/api/category", CategoryRouter);
 
-
 const PORT = 8080;
 app.listen(PORT, function () {
   console.log(`listening on port ${PORT}`);
