@@ -115,34 +115,24 @@ const registerUser = async (req, res) => {
   };
   const refreshTokens = async (req, res) => {
     try {
-      const user = await User.findOne({
-        _id: req.body.userId,
-        username: req.body.username,
-      });
-  
-      if (!user) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-  
-      // Assuming you have a field in your User model to store the refresh token
-      const userWithRefreshToken = await User.findOne({
-        refresh: req.body.token,
-      });
-  
-      if (!userWithRefreshToken) {
-        return res.status(401).json({ error: "Unauthorized2" });
-      }
-  
-      const access_token = jwtGenerate(user);
-      const refresh_token = jwtRefreshTokenGenerate(user);
-  
-      // Update the refresh token in the user document
-      userWithRefreshToken.refresh = refresh_token;
-      await userWithRefreshToken.save();
-  
-      return res.json({
-        access_token,
-        refresh_token,
+      const { token } = req.body;
+      jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ error: "Invalid refresh token" });
+        }
+        const userId = decoded.userId;
+        const user = await User.findOne({ _id: userId });
+        if (!user) {
+          return res.status(401).json({ error: "Unauthorized" });
+        }
+        const access_token = jwtGenerate(user);
+        const refresh_token = jwtRefreshTokenGenerate(user);
+        user.token = refresh_token;
+        await user.save();
+        return res.json({
+          access_token,
+          refresh_token,
+        });
       });
     } catch (error) {
       console.error(error);
@@ -300,5 +290,5 @@ const registerUser = async (req, res) => {
 }
 
   module.exports = {
-    registerUser,loginUser,refreshTokens,updateUser,verifyEmail,forgotPassword,resetPassword
+    registerUser,loginUser,refreshTokens,updateUser,verifyEmail,forgotPassword,resetPassword,refreshTokens
   };
