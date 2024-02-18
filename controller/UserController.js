@@ -244,17 +244,19 @@ const registerUser = async (req, res) => {
 };
   const forgotPassword = async (req, res) => {
     try {
+      const { email } = req.body;
+      const emailLower = email.toLowerCase();
       const user = await User
       .findOne
-      ({ email: req.body.email });
-      console.log(user);
+      ({ email: emailLower });
+      
       if (!user) return res.status(400).send("User not found");
       let token = new Token({
         userId: user._id,
         token: jwt.sign({userId: user._id}, process.env.ACCESS_TOKEN_SECRET),
       });
       await token.save();
-      const url = `${process.env.BASE_URL}/user/reset/${user._id}/${token.token}`;
+      const url = `${process.env.BASE_URL_RESET}/user/reset/${user._id}/${token.token}`;
       console.log(url);
       await sendEmail(user.email, "Reset your password", url);
       res.send("Password reset link sent to your email account");
@@ -263,7 +265,6 @@ const registerUser = async (req, res) => {
       res.status(400).send("An error occured");
     }
   }
-
   const resetPassword = async (req, res) => {
     try {
       const { password } = req.body;
