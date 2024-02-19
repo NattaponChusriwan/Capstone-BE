@@ -1,54 +1,62 @@
 const Image = require("../Schema/ImageSchema");
 
 const getPaginatedImages = async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 8;
-    const skip = (page - 1) * limit;
-  
-    try {
-      const totalImages = await Image.countDocuments();
-      const findImages = await Image.find()
-        .skip(skip)
-        .limit(limit)
-        .populate({
-          path: 'userId',
-          select: 'username',
-        })
-        .populate({
-          path: 'category',
-          select: 'category',
-        });
-      if (!findImages || findImages.length === 0) {
-        return res.json({
-          success: false,
-          message: 'No images found',
-        });
-      }
-      const AllImages  = findImages.map((image) => ({
-        _id: image._id,
-        username: image.userId ? image.userId.username : null,
-        title: image.title,
-        sale: image.sale,
-        description: image.description,
-        image: image.image,
-        price: image.price,
-        category: image.category ? image.category.category : null,
-        updateTime: image.uploadTime,
-      }));
-      res.json({
-        success: true,
-        AllImages ,
-        page,
-        totalPages: Math.ceil(totalImages / limit),
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 8;
+  const skip = (page - 1) * limit;
+  const categoryIds = req.query.categoryId;
+  try {
+    let query = {};
+    if (categoryIds && Array.isArray(categoryIds)) {
+      query.category = { $in: categoryIds }; 
+    } else if (categoryIds) {
+      query.category = categoryIds; 
+    }
+    const totalImages = await Image.countDocuments(query);
+    const findImages = await Image.find(query)
+      .skip(skip)
+      .limit(limit)
+      .populate({
+        path: 'userId',
+        select: 'username',
+      })
+      .populate({
+        path: 'category',
+        select: 'category',
       });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({
+
+    if (!findImages || findImages.length === 0) {
+      return res.json({
         success: false,
-        message: 'Error fetching paginated images',
+        message: 'No images found',
       });
     }
-  };
+    const AllImages = findImages.map((image) => ({
+      _id: image._id,
+      username: image.userId ? image.userId.username : null,
+      title: image.title,
+      sale: image.sale,
+      description: image.description,
+      image: image.image,
+      price: image.price,
+      category: image.category,
+      updateTime: image.uploadTime,
+    }));
+
+    res.json({
+      success: true,
+      AllImages,
+      page,
+      totalPages: Math.ceil(totalImages / limit),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching paginated images',
+    });
+  }
+};
   const getImage = async (req, res) => {
     try {
       const objectId = req.params.id;

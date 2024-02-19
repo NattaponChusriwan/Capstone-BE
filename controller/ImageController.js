@@ -49,10 +49,7 @@ const createImage = async (req, res) => {
       req.file.buffer
     );
     const safeSearchAnnotation = resultInappropriate.safeSearchAnnotation;
-    if (
-      safeSearchAnnotation.adult === "VERY_LIKELY" ||
-      safeSearchAnnotation.violence === "VERY_LIKELY"
-    ) {
+    if (safeSearchAnnotation.adult === "VERY_LIKELY" || safeSearchAnnotation.violence === "VERY_LIKELY"||safeSearchAnnotation.medical === "VERY_LIKELY") {
       return res.status(400).json({
         success: false,
         message: "Image contains inappropriate content",

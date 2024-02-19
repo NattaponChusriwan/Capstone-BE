@@ -52,7 +52,7 @@ const registerUser = async (req, res) => {
 
       const encryptedPassword = await bcrypt.hash(password, 10);
 
-      const oldUser = await User.findOne({ email: emailLower, username });
+      const oldUser = await User.findOne({ email: emailLower});
       if (oldUser) {
           return res.status(400).send("User Already Exists. Please Login Again");
       }
@@ -139,6 +139,13 @@ const registerUser = async (req, res) => {
   };
   const updateUser = async (req, res) => {
     try {
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({
+          success: false,
+          message: "Only JPEG and PNG files are allowed",
+        });
+      }
       const secretKey = process.env.ACCESS_TOKEN_SECRET;
       const token = req.headers.authorization;
       const actualToken = token.split(" ")[1];
@@ -169,8 +176,7 @@ const registerUser = async (req, res) => {
         );
         const safeSearchAnnotation = resultInappropriate.safeSearchAnnotation;
         if (
-          safeSearchAnnotation.adult === "VERY_LIKELY" ||
-          safeSearchAnnotation.violence === "VERY_LIKELY"
+          safeSearchAnnotation.adult === "VERY_LIKELY" || safeSearchAnnotation.violence === "VERY_LIKELY"||safeSearchAnnotation.medical === "VERY_LIKELY"
         ) {
           return res.status(400).json({
             success: false,

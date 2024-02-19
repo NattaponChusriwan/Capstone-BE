@@ -11,7 +11,8 @@ exports.connect = () => {
 
 setTimeout(async () => {
   await User.deleteMany({
-    isVerified: false,
     emailVerificationExpires: { $lt: new Date() },
+    isVerified: false
   });
 }, 60000);
+
