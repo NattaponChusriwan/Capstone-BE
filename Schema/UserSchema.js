@@ -26,6 +26,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: () => new Date(+new Date() +  10 * 60 * 1000) 
   },
+    recipientId:{
+      type: String,
+      default: ""
+    },
+    cardId:[{
+      type: String,
+      default: ""
+    }],
     createTime: {
       type: Date,
       default: Date.now,

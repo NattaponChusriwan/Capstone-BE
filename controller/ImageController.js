@@ -32,7 +32,14 @@ const createImage = async (req, res) => {
     }
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
     const token = req.headers.authorization;
+    if (!token) {
+      return res.status(401).json({ error: "Missing Authorization header" });
+    }
     const actualToken = token.split(" ")[1];
+    const decodedTokenExpire = jwt.decode(actualToken);
+    if (decodedTokenExpire.exp < Date.now() / 1000) {
+      return res.status(401).json({ error: "Token expired" });
+    }
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
 
@@ -49,7 +56,11 @@ const createImage = async (req, res) => {
       req.file.buffer
     );
     const safeSearchAnnotation = resultInappropriate.safeSearchAnnotation;
-    if (safeSearchAnnotation.adult === "VERY_LIKELY" || safeSearchAnnotation.violence === "VERY_LIKELY"||safeSearchAnnotation.medical === "VERY_LIKELY") {
+    if (
+      safeSearchAnnotation.adult === "VERY_LIKELY" ||
+      safeSearchAnnotation.violence === "VERY_LIKELY" ||
+      safeSearchAnnotation.medical === "VERY_LIKELY"
+    ) {
       return res.status(400).json({
         success: false,
         message: "Image contains inappropriate content",
@@ -122,12 +133,19 @@ const updateImage = async (req, res) => {
 
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
     const token = req.headers.authorization;
+    if (!token) {
+      return res.status(401).json({ error: "Missing Authorization header" });
+    }
     const actualToken = token.split(" ")[1];
+    const decodedTokenExpire = jwt.decode(actualToken);
+    if (decodedTokenExpire.exp < Date.now() / 1000) {
+      return res.status(401).json({ error: "Token expired" });
+    }
     const decoded = jwt.verify(actualToken, secretKey);
+    const userId = decoded.userId;
     const userIdString = updateObject.userId.toString();
 
-
-    if (userIdString !== decoded.userId) {
+    if (userIdString !== userId) {
       return res.status(401).json({
         success: false,
         message: "You don't have permission",
@@ -138,20 +156,24 @@ const updateImage = async (req, res) => {
     if (req.body.category) {
       const categories = req.body.category; // Assuming categories are sent as an array
 
-      categoryIDs = await Promise.all(categories.map(async (categoryName) => {
-        let categoryID = null;
-        const existingCategory = await Category.findOne({ category: categoryName });
+      categoryIDs = await Promise.all(
+        categories.map(async (categoryName) => {
+          let categoryID = null;
+          const existingCategory = await Category.findOne({
+            category: categoryName,
+          });
 
-        if (existingCategory) {
-          categoryID = existingCategory._id;
-        } else {
-          const newCategory = new Category({ category: categoryName });
-          const savedCategory = await newCategory.save();
-          categoryID = savedCategory._id;
-        }
+          if (existingCategory) {
+            categoryID = existingCategory._id;
+          } else {
+            const newCategory = new Category({ category: categoryName });
+            const savedCategory = await newCategory.save();
+            categoryID = savedCategory._id;
+          }
 
-        return categoryID;
-      }));
+          return categoryID;
+        })
+      );
     } else {
       // If no category is sent, use the existing categories associated with the image
       categoryIDs = updateObject.category;
@@ -191,15 +213,21 @@ const updateImage = async (req, res) => {
   }
 };
 
-
 const deleteImage = async (req, res) => {
   try {
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
-    const objectId = req.params.id;
     const token = req.headers.authorization;
+    if (!token) {
+      return res.status(401).json({ error: "Missing Authorization header" });
+    }
     const actualToken = token.split(" ")[1];
+    const decodedTokenExpire = jwt.decode(actualToken);
+    if (decodedTokenExpire.exp < Date.now() / 1000) {
+      return res.status(401).json({ error: "Token expired" });
+    }
     const decoded = jwt.verify(actualToken, secretKey);
-    if (objectId.userId && objectId.userId !== decoded.userId) {
+    const userId = decoded.userId;
+    if (objectId.userId && objectId.userId !== userId) {
       return res.status(401).json({
         success: false,
         message: "You don't have permission",
@@ -235,7 +263,14 @@ const getUserImages = async (req, res) => {
   try {
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
     const token = req.headers.authorization;
+    if (!token) {
+      return res.status(401).json({ error: "Missing Authorization header" });
+    }
     const actualToken = token.split(" ")[1];
+    const decodedTokenExpire = jwt.decode(actualToken);
+    if (decodedTokenExpire.exp < Date.now() / 1000) {
+      return res.status(401).json({ error: "Token expired" });
+    }
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
 
@@ -264,7 +299,7 @@ const getUserImages = async (req, res) => {
       description: image.description,
       image: image.image,
       price: image.price,
-      category: image.category ? image.category.map(cat => cat._id) : null,
+      category: image.category ? image.category.map((cat) => cat._id) : null,
       updateTime: image.uploadTime,
     }));
 

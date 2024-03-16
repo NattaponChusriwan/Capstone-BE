@@ -5,8 +5,10 @@ const ImageRouter = require("./routers/ImageRouter");
 const GetImageRouter = require("./routers/GetImageRouter");
 const UserRouter = require("./routers/UserRouter");
 const CategoryRouter = require("./routers/CategoryRouter");
-
-
+const RecipientRouter = require("./routers/RecipientRouter");
+const PaymentRouter = require("./routers/PaymentRouter");
+const CardRouter = require("./routers/CardRouter");
+const WebhookRouter = require("./routers/WebhookRouter");
 const { jwtValidate } = require("./middleware/jwt");
 require("dotenv").config();
 require("./config/db").connect();
@@ -19,6 +21,11 @@ app.use("/api/image", jwtValidate, ImageRouter);
 app.use("/api/images", GetImageRouter);
 app.use("/api/user", UserRouter);
 app.use("/api/category", CategoryRouter);
+app.use("/api/recipient", RecipientRouter);
+app.use("/api/card", CardRouter);
+app.use("/api/webhook", WebhookRouter);
+
+app.use("/api/payment", PaymentRouter);
 
 const PORT = 8080;
 app.listen(PORT, function () {
