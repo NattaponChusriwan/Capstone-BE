@@ -26,6 +26,12 @@ const tokenCard = async (req, res) => {
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
 
+    // Check if the card number already exists for the current user
+    const existingCard = await Card.findOne({ userId: userId, number: req.body.number });
+
+    // If the card number already exists for the current user, return the existing token
+   
+
     const card = await omiseClient.tokens.create({
       card: {
         name: req.body.name,
@@ -37,7 +43,11 @@ const tokenCard = async (req, res) => {
         security_code: req.body.security_code,
       },
     });
-    console.log("Card:", card);
+    if (existingCard) {
+      return res.status(200).json({ tokenId: card.id });
+    }
+
+    // Save the new card in the database
     const cardSave = new Card({
       userId: userId,
       name: req.body.name,
@@ -46,21 +56,20 @@ const tokenCard = async (req, res) => {
       expired_year: req.body.expiration_year,
       cardId: card.card.id,
     });
+    await cardSave.save();
 
-    const savedCard = await cardSave.save();
-    const user = await User.findOneAndUpdate(
-      { _id: userId },
-      { cardId: card.card.id },
-      { new: true }
-    );
-    res.status(200).json(card.id);
-    // Return both the saved card and the token
-    // res.status(200).json({ savedCard, token: card });
+    // Update the user's cardId field
+    await User.findByIdAndUpdate(userId, { $addToSet: { cardId: card.card.id } });
+
+    res.status(200).json({ tokenId: card.id });
+    // Return the token
+   
   } catch (error) {
     console.error("Error creating card:", error);
     res.status(500).json({ error: "Failed to create card" });
   }
 };
+
 const getCard = async (req, res) => {
   try {
     const secretKey = process.env.ACCESS_TOKEN_SECRET;

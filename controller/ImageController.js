@@ -4,6 +4,7 @@ const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 const Image = require("../Schema/ImageSchema");
 const Category = require("../Schema/CategorySchema");
+const SaleDetail = require("../Schema/SaleDetailSchema");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const { initializeApp } = require("firebase/app");
@@ -105,10 +106,20 @@ const createImage = async (req, res) => {
     });
 
     const savedImage = await image.save();
+    if (req.body.sale) {
+      const saleDeatil = new SaleDetail({
+        userId: userId,
+        imageId: savedImage._id,
+        image: savedImage.image,
+        title: savedImage.title,
+        price: savedImage.price,
+      });
+      const savedSaleDetail = await saleDeatil.save();
+    }
     res.json({
       success: true,
       message: "Image saved successfully",
-      savedImage,
+      savedImage
     });
   } catch (err) {
     console.error(err);

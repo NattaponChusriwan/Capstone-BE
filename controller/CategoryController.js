@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Image = require("../Schema/ImageSchema");
 const Category = require("../Schema/CategorySchema");
+const express = require("express");
+const router = require("express").Router();
 
 const filterImages = async (req, res) => {
   try {
