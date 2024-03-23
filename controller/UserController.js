@@ -67,8 +67,8 @@ const registerUser = async (req, res) => {
       token: jwt.sign({ userId: newUser._id }, process.env.ACCESS_TOKEN_SECRET),
     });
     await token.save();
-    // const url = `${process.env.BASE_URL}/user/verify/${newUser._id}/${token.token}`
-    const url = `http://localhost:8080/api/user/verify/${newUser._id}/${token.token}`;
+    const url = `${process.env.BASE_URL}/user/verify/${newUser._id}/${token.token}`
+    // const url = `http://localhost:8080/api/user/verify/${newUser._id}/${token.token}`;
     console.log(url);
     await sendEmail(newUser.email, "Verify your email", url);
     res.send("An Email sent to your account please verify");

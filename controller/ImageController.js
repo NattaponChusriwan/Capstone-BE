@@ -6,6 +6,7 @@ const Image = require("../Schema/ImageSchema");
 const Category = require("../Schema/CategorySchema");
 const SaleDetail = require("../Schema/SaleDetailSchema");
 const mongoose = require("mongoose");
+const User = require("../Schema/UserSchema");
 const jwt = require("jsonwebtoken");
 const { initializeApp } = require("firebase/app");
 const {
@@ -43,7 +44,7 @@ const createImage = async (req, res) => {
     }
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
-
+    const user = await User.findById(userId)
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -94,7 +95,6 @@ const createImage = async (req, res) => {
     const metadata = { contentType: req.file.mimetype };
     await uploadBytesResumable(fileRef, imageBuffer, metadata);
     const downloadURL = await getDownloadURL(fileRef);
-
     const image = new Image({
       userId: userId,
       title: req.body.title,
@@ -103,7 +103,7 @@ const createImage = async (req, res) => {
       sale: req.body.sale,
       price: req.body.price,
       category: categoryIDs,
-      recipientId: userId.recipientId
+      recipientId: user.recipientId
     });
 
     const savedImage = await image.save();
@@ -228,6 +228,7 @@ const updateImage = async (req, res) => {
 const deleteImage = async (req, res) => {
   try {
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
+    const objectId = req.params.id
     const token = req.headers.authorization;
     if (!token) {
       return res.status(401).json({ error: "Missing Authorization header" });

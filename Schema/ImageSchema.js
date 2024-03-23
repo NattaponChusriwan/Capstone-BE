@@ -17,6 +17,7 @@ const imageSchema = new mongoose.Schema(
     },
     sale: {
       type: Boolean,
+      default: false,
     },
     price: {
       type: Number,

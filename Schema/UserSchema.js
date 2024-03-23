@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
   },
     recipientId:{
       type: String,
-      default: ""
+      default: null
     },
     cardId:[{
       type: String,
