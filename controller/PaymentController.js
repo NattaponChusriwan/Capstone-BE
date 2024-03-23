@@ -53,13 +53,13 @@ const charge = async (req, res) => {
     const charge = await omiseClient.charges.create({
       amount: image.price * 100,
       currency: "THB",
-      recipient: req.body.recipientId,
+      recipient: image.recipientId,
       card: req.body.cardToken,
     });
     const transfer = await omiseClient.transfers.create({
       amount: image.price * 100 * 0.9,
       currency: "THB",
-      recipient: req.body.recipientId,
+      recipient: image.recipientId,
     });
 
     const firebaseUrl = image.image;

@@ -25,6 +25,9 @@ const imageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
     }],
+    recipientId: {
+      type: String,
+    },
     uploadTime: {
       type: Date,
       default: Date.now,

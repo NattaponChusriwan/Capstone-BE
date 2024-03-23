@@ -103,6 +103,7 @@ const createImage = async (req, res) => {
       sale: req.body.sale,
       price: req.body.price,
       category: categoryIDs,
+      recipientId: userId.recipientId
     });
 
     const savedImage = await image.save();
