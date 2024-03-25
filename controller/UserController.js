@@ -67,7 +67,7 @@ const registerUser = async (req, res) => {
       token: jwt.sign({ userId: newUser._id }, process.env.ACCESS_TOKEN_SECRET),
     });
     await token.save();
-    const url = `${process.env.BASE_URL}/user/verify/${newUser._id}/${token.token}`
+    const url = `${process.env.BASE_URL}/api/user/verify/${newUser._id}/${token.token}`
     // const url = `http://localhost:8080/api/user/verify/${newUser._id}/${token.token}`;
     console.log(url);
     await sendEmail(newUser.email, "Verify your email", url);
@@ -263,8 +263,7 @@ const verifyEmail = async (req, res) => {
     user.emailVerificationExpires = null;
     await user.save();
     await token.deleteOne(token._id);
-
-    res.redirect("http://capstone23.sit.kmutt.ac.th/tt2/login");
+    res.redirect(`http://capstone23.sit.kmutt.ac.th/tt2/login`);
   } catch (error) {
     res.status(400).send("An error occurred");
   }
