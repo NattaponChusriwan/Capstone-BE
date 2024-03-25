@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 dotenv.config();
 const getSaleDetail = async (req, res) => {
-  try{
+  try {
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
     const token = req.headers.authorization;
     if (!token) {
@@ -18,15 +18,18 @@ const getSaleDetail = async (req, res) => {
     }
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
-    
-    const sale = await Sale.find({ userId: userId })
-    
+    const sale = await Sale.find({ userId: userId });
+    if (sale.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No sales found for this user",
+      });
+    }
     res.status(200).json({
       success: true,
       sale,
     });
-
-  }catch(error){
+  } catch (error) {
     res.status(500).json({
       success: false,
       message: error.message,

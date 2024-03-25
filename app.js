@@ -10,6 +10,7 @@ const PaymentRouter = require("./routers/PaymentRouter");
 const CardRouter = require("./routers/CardRouter");
 const OrderRouter = require("./routers/OrderDetailRouter"); 
 const SaleRouter = require("./routers/SaleDetailRouter");
+const bodyParser = require('body-parser');
 const { jwtValidate } = require("./middleware/jwt");
 require("dotenv").config();
 require("./config/db").connect();

@@ -60,9 +60,8 @@ const tokenCard = async (req, res) => {
 
     // Update the user's cardId field
     await User.findByIdAndUpdate(userId, { $addToSet: { cardId: card.card.id } });
-
+    
     res.status(200).json({ tokenId: card.id });
-    // Return the token
    
   } catch (error) {
     console.error("Error creating card:", error);
@@ -86,6 +85,9 @@ const getCard = async (req, res) => {
     const userId = decoded.userId;
 
     const card = await Card.find({ userId: userId });
+    if (card.length === 0) {
+      return res.status(404).json({ error: "No card found for this user" });
+    }
     res.status(200).json(card);
   } catch (error) {
     console.error("Error getting card:", error);

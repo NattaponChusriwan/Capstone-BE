@@ -24,8 +24,14 @@ const getOrder = async (req, res) => {
         message: "Invalid user ID",
       });
     }
-    const order = await Order.find({ userId: userId })
     
+    const order = await Order.find({ userId: userId })
+    if (order.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No order found for this user",
+      });
+    }
     res.status(200).json({
       success: true,
       order,
