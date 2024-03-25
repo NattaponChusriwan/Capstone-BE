@@ -17,6 +17,8 @@ require("./config/db").connect();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 app.use("/api/image", jwtValidate, ImageRouter);
 app.use("/api/images", GetImageRouter);

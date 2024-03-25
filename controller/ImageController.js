@@ -8,6 +8,7 @@ const SaleDetail = require("../Schema/SaleDetailSchema");
 const mongoose = require("mongoose");
 const User = require("../Schema/UserSchema");
 const jwt = require("jsonwebtoken");
+const sharp = require("sharp");
 const { initializeApp } = require("firebase/app");
 const {
   getStorage,

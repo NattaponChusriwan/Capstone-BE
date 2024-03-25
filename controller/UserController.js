@@ -224,7 +224,6 @@ const updateUser = async (req, res) => {
     const encryptedPassword = await bcrypt.hash(req.body.password, 10);
 
     const updateData = {
-      email: req.body.email,
       username: username,
       password: encryptedPassword,
       profile_image: newDownloadURL,
@@ -265,7 +264,7 @@ const verifyEmail = async (req, res) => {
     await user.save();
     await token.deleteOne(token._id);
 
-    res.redirect("http://capstone23.sit.kmutt.ac.th/tt2/");
+    res.redirect("http://capstone23.sit.kmutt.ac.th/tt2/login");
   } catch (error) {
     res.status(400).send("An error occurred");
   }
@@ -282,7 +281,7 @@ const forgotPassword = async (req, res) => {
       token: jwt.sign({ userId: user._id }, process.env.ACCESS_TOKEN_SECRET),
     });
     await token.save();
-    const url = `${process.env.BASE_URL}/tt2/user/reset/${user._id}/${token.token}`;
+    const url = `${process.env.BASE_URL}/user/reset/${user._id}/${token.token}`;
     console.log(url);
     await sendEmail(user.email, "Reset your password", url);
     res.send("Password reset link sent to your email account");
