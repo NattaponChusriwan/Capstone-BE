@@ -25,20 +25,7 @@ const tokenCard = async (req, res) => {
     }
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
-    const existingCard = await Card.findOne({ userId: userId, number: req.body.number });
-    if (existingCard) {
-      // หากพบว่าบัตรซ้ำ ให้อัปเดตข้อมูลแทน
-      await Card.findOneAndUpdate(
-        { userId: userId, number: req.body.number },
-        {
-          name: req.body.name,
-          expiration_month: req.body.expiration_month,
-          expiration_year: req.body.expiration_year,
-          updateAt: Date.now()
-        }
-      );
-      return res.status(200).json({ message: "Card updated successfully" });
-    }
+   
     const card = await omiseClient.tokens.create({
       card: {
         name: req.body.name,
@@ -48,7 +35,29 @@ const tokenCard = async (req, res) => {
         security_code: req.body.security_code,
       },
     });
-
+    const existingCard = await Card.findOne({ userId: userId, number: req.body.number });
+    if (existingCard) {
+      // Check if the card data is the same as the existing one
+      const isSameCardData = (
+        existingCard.name === req.body.name &&
+        existingCard.expiration_month === req.body.expiration_month &&
+        existingCard.expiration_year === req.body.expiration_year
+      );
+      if (isSameCardData) {
+        return res.status(200).json({ message: "Card data is the same. No update needed.", tokenId: card.id });
+      } else {
+        await Card.findOneAndUpdate(
+          { userId: userId, number: req.body.number },
+          {
+            name: req.body.name,
+            expiration_month: req.body.expiration_month,
+            expiration_year: req.body.expiration_year,
+            updateAt: Date.now()
+          }
+        );
+        return res.status(200).json({ message: "Card updated successfully", tokenId: card.id });
+      }
+    }
     const cardSave = new Card({
       userId: userId,
       name: req.body.name,
@@ -68,6 +77,8 @@ const tokenCard = async (req, res) => {
     res.status(500).json({ error: "Failed to create card" });
   }
 };
+
+
 
 const getCard = async (req, res) => {
   try {
