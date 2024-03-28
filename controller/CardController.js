@@ -26,6 +26,19 @@ const tokenCard = async (req, res) => {
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
     const existingCard = await Card.findOne({ userId: userId, number: req.body.number });
+    if (existingCard) {
+      // หากพบว่าบัตรซ้ำ ให้อัปเดตข้อมูลแทน
+      await Card.findOneAndUpdate(
+        { userId: userId, number: req.body.number },
+        {
+          name: req.body.name,
+          expiration_month: req.body.expiration_month,
+          expired_year: req.body.expiration_year,
+          updateAt: Date.now()
+        }
+      );
+      return res.status(200).json({ message: "Card updated successfully" });
+    }
     const card = await omiseClient.tokens.create({
       card: {
         name: req.body.name,
@@ -35,9 +48,7 @@ const tokenCard = async (req, res) => {
         security_code: req.body.security_code,
       },
     });
-    if (existingCard) {
-      return res.status(200).json({ tokenId: card.id });
-    }
+
     const cardSave = new Card({
       userId: userId,
       name: req.body.name,
