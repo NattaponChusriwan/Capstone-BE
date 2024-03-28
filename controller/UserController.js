@@ -81,27 +81,31 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
     const emailLower = email.toLowerCase();
-    const user = await User.findOne({ email: emailLower });
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    const findUser = await User.findOne({ email: emailLower });
+    
+    if (!findUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
     }
-    if (!user.isVerified) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Please verify your email" });
+    
+    if (!findUser.isVerified) {
+      return res.status(403).json({ success: false, message: "Please verify your email" });
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    const isPasswordValid = await bcrypt.compare(password, findUser.password);
+    
     if (!isPasswordValid) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid password" });
+      return res.status(401).json({ success: false, message: "Invalid password" });
     }
-    const access_token = jwtGenerate(user);
-    const refresh_token = jwtRefreshTokenGenerate(user);
-    user.refresh = refresh_token;
-    await user.save();
+    
+    const access_token = jwtGenerate(findUser);
+    const refresh_token = jwtRefreshTokenGenerate(findUser);
+    
+    findUser.refresh = refresh_token;
+    await findUser.save();
+    
+    // Exclude password field from the response
+    const { password: hashedPassword, ...user } = findUser.toObject();
+    
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -114,6 +118,7 @@ const loginUser = async (req, res) => {
     res.status(500).json({ success: false, error: "Error during login" });
   }
 };
+
 const refreshTokens = async (req, res) => {
   try {
     const { refresh_token } = req.body;
@@ -163,24 +168,30 @@ const updateUser = async (req, res) => {
     
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
-    const updateUser = await User.findById(userId);
+    const findUser = await User.findById(userId);
 
-    if (!updateUser) {
+    if (!findUser) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
-    if (updateUser._id.toString() !== decoded.userId) {
+    if (findUser._id.toString() !== decoded.userId) {
       return res.status(401).json({
         success: false,
         message: "You don't have permission",
       });
     }
 
-    let newDownloadURL = updateUser.profile_image;
-
+    let newDownloadURL = findUser.profile_image;
+    let username = findUser.username;
+    if (req.body.username) {
+      if (!validator.isLength(req.body.username, { min: 6, max: 20 })) {
+        return res.status(400).send("Username is not valid");
+      }
+      username = req.body.username;
+    }
     if (req.file) {
       const imageBuffer = req.file.buffer;
       const [resultInappropriate] = await client.safeSearchDetection(
@@ -200,27 +211,19 @@ const updateUser = async (req, res) => {
       const newFilename = `${Date.now()}_${req.file.originalname}`;
       const newFileRef = ref(
         storage,
-        `images/profile/${updateUser._id}/${newFilename}`
+        `images/profile/${findUser._id}/${newFilename}`
       );
       await uploadBytesResumable(newFileRef, imageBuffer, {
         contentType: req.file.mimetype,
       });
       newDownloadURL = await getDownloadURL(newFileRef);
-      if (updateUser.profile_image) {
-        const imageRef = ref(storage, updateUser.profile_image);
+      if (findUser.profile_image) {
+        const imageRef = ref(storage, findUser.profile_image);
         await deleteObject(imageRef);
       }
     }
 
-    let username = updateUser.username;
-    if (req.body.username) {
-      if (!validator.isLength(req.body.username, { min: 6, max: 20 })) {
-        return res.status(400).send("Username is not valid");
-      }
-      username = req.body.username;
-    }
-
-    let encryptedPassword = updateUser.password;
+    let encryptedPassword = findUser.password;
     if (req.body.password) {
       encryptedPassword = await bcrypt.hash(req.body.password, 10);
     }
@@ -232,16 +235,16 @@ const updateUser = async (req, res) => {
       updateTime: new Date(),
     };
 
-    const updatedUser = await User.findOneAndUpdate(
+    const user = await User.findOneAndUpdate(
       { _id: decoded.userId },
       updateData,
       { new: true }
     );
-    
+    const { password, ...updateUser} = user.toObject();
     res.json({
       success: true,
       message: "Profile updated successfully",
-      updatedUser,
+      updateUser,
     });
   } catch (error) {
     console.error(error);
