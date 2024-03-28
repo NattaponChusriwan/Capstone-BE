@@ -58,7 +58,6 @@ const registerUser = async (req, res) => {
       email: emailLower,
       password: encryptedPassword,
       username,
-      profile_image: process.env.DEFAULT_IMAGE,
     });
     await newUser.save();
 
@@ -148,22 +147,20 @@ const refreshTokens = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-    if (!allowedTypes.includes(req.file.mimetype)) {
-      return res.status(400).json({
-        success: false,
-        message: "Only JPEG and PNG files are allowed",
-      });
-    }
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
     const token = req.headers.authorization;
+    
     if (!token) {
       return res.status(401).json({ error: "Missing Authorization header" });
     }
+    
     const actualToken = token.split(" ")[1];
     const decodedTokenExpire = jwt.decode(actualToken);
+    
     if (decodedTokenExpire.exp < Date.now() / 1000) {
       return res.status(401).json({ error: "Token expired" });
     }
+    
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
     const updateUser = await User.findById(userId);
@@ -214,6 +211,7 @@ const updateUser = async (req, res) => {
         await deleteObject(imageRef);
       }
     }
+
     let username = updateUser.username;
     if (req.body.username) {
       if (!validator.isLength(req.body.username, { min: 6, max: 20 })) {
@@ -221,7 +219,11 @@ const updateUser = async (req, res) => {
       }
       username = req.body.username;
     }
-    const encryptedPassword = await bcrypt.hash(req.body.password, 10);
+
+    let encryptedPassword = updateUser.password;
+    if (req.body.password) {
+      encryptedPassword = await bcrypt.hash(req.body.password, 10);
+    }
 
     const updateData = {
       username: username,
@@ -235,6 +237,7 @@ const updateUser = async (req, res) => {
       updateData,
       { new: true }
     );
+    
     res.json({
       success: true,
       message: "Profile updated successfully",
@@ -248,6 +251,7 @@ const updateUser = async (req, res) => {
     });
   }
 };
+
 const verifyEmail = async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.params.id });
