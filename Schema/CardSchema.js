@@ -17,7 +17,7 @@ const CardSchema = new mongoose.Schema({
   expiration_month: {
     type: Number,
   },
-  expired_year: {
+  expiration_year: {
     type: Number,
   },
   createAt: {

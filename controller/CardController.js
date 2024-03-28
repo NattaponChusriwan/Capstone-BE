@@ -33,7 +33,7 @@ const tokenCard = async (req, res) => {
         {
           name: req.body.name,
           expiration_month: req.body.expiration_month,
-          expired_year: req.body.expiration_year,
+          expiration_year: req.body.expiration_year,
           updateAt: Date.now()
         }
       );
@@ -54,7 +54,7 @@ const tokenCard = async (req, res) => {
       name: req.body.name,
       number: req.body.number,
       expiration_month: req.body.expiration_month,
-      expired_year: req.body.expiration_year,
+      expiration_year: req.body.expiration_year,
       cardId: card.card.id,
     });
     await cardSave.save();
