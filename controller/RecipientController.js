@@ -26,7 +26,7 @@ const createRecipient = async (req, res) => {
     const userId = decoded.userId;
 
     const recipient = await omiseClient.recipients.create({
-      name: req.body.name,
+      name: req.body.accountName,
       email: req.body.email,
       type: req.body.type,
       bank_account: {
@@ -39,7 +39,7 @@ const createRecipient = async (req, res) => {
     const recipientSave = new Recipient({
       userId: userId,
       email: req.body.email,
-      name: req.body.name,
+      name: req.body.accountName,
       type: req.body.type,
       bank_account: {
         brand: req.body.brand,

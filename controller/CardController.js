@@ -25,18 +25,10 @@ const tokenCard = async (req, res) => {
     }
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
-
-    // Check if the card number already exists for the current user
     const existingCard = await Card.findOne({ userId: userId, number: req.body.number });
-
-    // If the card number already exists for the current user, return the existing token
-   
-
     const card = await omiseClient.tokens.create({
       card: {
         name: req.body.name,
-        city: req.body.city,
-        postal_code: req.body.postal_code,
         number: req.body.number,
         expiration_month: req.body.expiration_month,
         expiration_year: req.body.expiration_year,
@@ -46,8 +38,6 @@ const tokenCard = async (req, res) => {
     if (existingCard) {
       return res.status(200).json({ tokenId: card.id });
     }
-
-    // Save the new card in the database
     const cardSave = new Card({
       userId: userId,
       name: req.body.name,
@@ -58,7 +48,6 @@ const tokenCard = async (req, res) => {
     });
     await cardSave.save();
 
-    // Update the user's cardId field
     await User.findByIdAndUpdate(userId, { $addToSet: { cardId: card.card.id } });
     
     res.status(200).json({ tokenId: card.id });
