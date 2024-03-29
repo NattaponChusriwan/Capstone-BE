@@ -229,7 +229,6 @@ const updateImage = async (req, res) => {
 const deleteImage = async (req, res) => {
   try {
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
-    const objectId = req.params.id
     const token = req.headers.authorization;
     if (!token) {
       return res.status(401).json({ error: "Missing Authorization header" });
@@ -241,14 +240,17 @@ const deleteImage = async (req, res) => {
     }
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
-    if (objectId.userId && objectId.userId !== userId) {
+    const image = await Image.findById(req.body.imageId);
+    const imageIdString = image.userId.toString();
+    console.log(imageIdString, userId);
+    if (imageIdString !== userId) {
       return res.status(401).json({
         success: false,
         message: "You don't have permission",
       });
     }
 
-    const deletedObject = await Image.findOneAndDelete(objectId);
+    const deletedObject = await Image.findByIdAndDelete(req.body.imageId);
     if (!deletedObject) {
       return res.status(404).json({
         success: false,
@@ -316,6 +318,7 @@ const getUserImages = async (req, res) => {
       category: image.category ? image.category.map((cat) => cat._id) : null,
       updateTime: image.uploadTime,
     }));
+    
 
     res.json({
       success: true,
