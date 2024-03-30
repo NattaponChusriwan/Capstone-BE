@@ -9,6 +9,7 @@ const mongoose = require("mongoose");
 const User = require("../Schema/UserSchema");
 const jwt = require("jsonwebtoken");
 const sharp = require("sharp");
+const recipient = require("../Schema/RecipientSchema");
 const { initializeApp } = require("firebase/app");
 const {
   getStorage,
@@ -90,6 +91,23 @@ const createImage = async (req, res) => {
         categoryID = savedCategory._id;
       }
       categoryIDs.push(categoryID);
+    }
+    if(req.body.sale){
+      if(user.recipientId == null){
+        return res.status(400).json({
+          success: false,
+          message: "User doesn't have a recipientId",
+        });
+      }
+      else {
+        const recipientVerified = await recipient.findOne({userId: userId});
+        if(!recipientVerified.verified){
+          return res.status(400).json({
+            success: false,
+            message: "Recipient not verified",
+          });
+        }
+      }
     }
     const filename = `${Date.now()}_${req.file.originalname}`;
     const fileRef = ref(storageRef, `images/images/${userId}/${filename}`);
