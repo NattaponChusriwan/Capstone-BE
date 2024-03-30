@@ -99,7 +99,7 @@ const charge = async (req, res) => {
     res.status(200).json({ charge, transfer, savedOrder });
   } catch (error) {
     console.error("Error processing payment:", error);
-    res.status(500).json({ error: "Failed to process payment" });
+    res.status(500).json({ error: error.message });
   }
 };
 

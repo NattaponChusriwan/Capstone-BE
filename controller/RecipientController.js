@@ -61,7 +61,7 @@ const createRecipient = async (req, res) => {
     res.status(200).json(savedRecipient);
   } catch (error) {
     console.error("Error creating recipient:", error);
-    res.status(500).json({ error: "Failed to create recipient" });
+    res.status(500).json({ error: error.message});
   }
 };
 const updateRecipient = async (req, res) => {
@@ -122,7 +122,7 @@ const updateRecipient = async (req, res) => {
     res.status(200).json(updatedRecipient);
   } catch (error) {
     console.error("Error updating recipient:", error);
-    res.status(500).json({ error: "Failed to update recipient" });
+    res.status(500).json({ error: error.message});
   }
 };
 const getRecipient = async (req, res) => {
@@ -144,12 +144,21 @@ const getRecipient = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
     const recipient = await omiseClient.recipients.retrieve(findUser.recipientId);
+    if (recipient.verified === true) {
+      // อัปเดตฐานข้อมูลเมื่อ verified เป็น true
+      await Recipient.findOneAndUpdate(
+        { userId: userId },
+        { $set: { verified: true } },
+        { new: true }
+      );
+    }
     res.status(200).json(recipient);
   } catch (error) {
     console.error("Error fetching recipient:", error);
-    res.status(500).json({ error: "Failed to fetch recipient" });
+    res.status(500).json({ error: error.message });
   }
 };
+
 
 module.exports = {
   createRecipient,

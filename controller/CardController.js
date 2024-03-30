@@ -74,7 +74,7 @@ const tokenCard = async (req, res) => {
    
   } catch (error) {
     console.error("Error creating card:", error);
-    res.status(500).json({ error: "Failed to create card" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -102,7 +102,7 @@ const getCard = async (req, res) => {
     res.status(200).json(card);
   } catch (error) {
     console.error("Error getting card:", error);
-    res.status(500).json({ error: "Failed to get card" });
+    res.status(500).json({ error: error.message });
   }
 };
 

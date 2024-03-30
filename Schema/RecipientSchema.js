@@ -29,6 +29,14 @@ const RecipientSchema = new mongoose.Schema(
     recipientId: {
       type: String,
     },
+    active:{
+      type: Boolean,
+      default: true,
+    },
+    verified: {
+      type: Boolean,
+      default: false,
+    },
     createTime: {
       type: Date,
       default: Date.now,
