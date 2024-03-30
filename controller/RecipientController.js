@@ -85,7 +85,7 @@ const updateRecipient = async (req, res) => {
     const recipient = await omiseClient.recipients.update(
       findUser.recipientId,
       {
-        name: req.body.name,
+        name: req.body.accountName,
         email: req.body.email,
         type: req.body.type,
         bank_account: {
@@ -98,9 +98,11 @@ const updateRecipient = async (req, res) => {
     const updatedRecipient = await Recipient.findOneAndUpdate(
       { recipientId: recipient.id },
       {
-        name: req.body.name,
+        name: req.body.accountName,
         email: req.body.email,
         type: req.body.type,
+        active: true,
+        verified: false,
         bank_account: {
           brand: req.body.brand,
           number: req.body.accountNumber,
