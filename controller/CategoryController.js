@@ -114,11 +114,20 @@ const getCategories = async (req, res) => {
           images: { $ne: [] },
         },
       },
+      {
+        $addFields: {
+          imageCount: { $size: "$images" } 
+        }
+      },
+      {
+        $sort: { imageCount: -1 } 
+      }
     ]);
 
     const categories = categoriesWithImages.map(category => ({
       _id: category._id,
-      category: category.category
+      category: category.category,
+      imageCount: category.imageCount 
     }));
 
     if (!categories || categories.length === 0) {
@@ -140,6 +149,7 @@ const getCategories = async (req, res) => {
     });
   }
 };
+
 
 
 
