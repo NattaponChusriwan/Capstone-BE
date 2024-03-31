@@ -113,6 +113,7 @@ const loginUser = async (req, res) => {
       access_token: access_token,
       refresh_token,
     });
+  
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: "Error during login" });
@@ -152,6 +153,12 @@ const refreshTokens = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        message: "Only JPEG and PNG files are allowed",
+      });
+    }
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
     const token = req.headers.authorization;
     
