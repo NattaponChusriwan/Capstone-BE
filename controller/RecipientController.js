@@ -155,8 +155,15 @@ const getRecipient = async (req, res) => {
     }
     res.status(200).json({
       recipientId: recipient.id,
-      verified: recipient.verified,
+      name: recipient.name,
+      type: recipient.type,
       active: recipient.active,
+      verified: recipient.verified,
+      bank_account: {
+        brand: recipient.bank_account.brand,
+        number: recipient.bank_account.account_number,
+        name: recipient.bank_account.name,
+      },
     });
   } catch (error) {
     console.error("Error fetching recipient:", error);
