@@ -92,16 +92,20 @@ const createImage = async (req, res) => {
       }
       categoryIDs.push(categoryID);
     }
-    if(req.body.sale){
-      if(user.recipientId == null){
+    if (req.body.sale) {
+      if (user.recipientId == null) {
         return res.status(400).json({
           success: false,
           message: "User doesn't have a recipientId",
         });
-      }
-      else {
-        const recipientVerified = await recipient.findOne({userId: userId});
-        if(!recipientVerified.verified){
+      } else if (req.body.price < 40 || req.body.price > 150000) {
+        return res.status(400).json({
+          success: false,
+          message: "Price must be greater than 40 or less than 150000",
+        });
+      } else if (req.body.sale) {
+        const recipientVerified = await recipient.findOne({ userId: userId });
+        if (!recipientVerified.verified) {
           return res.status(400).json({
             success: false,
             message: "Recipient not verified",
@@ -109,6 +113,9 @@ const createImage = async (req, res) => {
         }
       }
     }
+    
+    
+  
     const filename = `${Date.now()}_${req.file.originalname}`;
     const fileRef = ref(storageRef, `images/images/${userId}/${filename}`);
     const metadata = { contentType: req.file.mimetype };
