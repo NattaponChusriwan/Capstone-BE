@@ -92,7 +92,7 @@ const createImage = async (req, res) => {
       }
       categoryIDs.push(categoryID);
     }
-    if (req.body.sale) {
+    if (req.body.sale !== false && req.body.sale !== null) {
       if (user.recipientId == null) {
         return res.status(400).json({
           success: false,
@@ -103,16 +103,17 @@ const createImage = async (req, res) => {
           success: false,
           message: "Price must be greater than 40 or less than 150000",
         });
-      } else {
-        const recipientVerified = await recipient.findOne({ userId: userId });
+      } 
+    }
+    if(req.body.sale !== false && req.body.sale !== null){
+      const recipientVerified = await recipient.findOne({ userId: userId });
         if (!recipientVerified.verified) {
           return res.status(400).json({
             success: false,
             message: "Recipient not verified",
           });
-        }
-      }
-    }
+    }}
+
     
     
     

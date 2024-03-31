@@ -147,14 +147,17 @@ const getRecipient = async (req, res) => {
     }
     const recipient = await omiseClient.recipients.retrieve(findUser.recipientId);
     if (recipient.verified === true) {
-      // อัปเดตฐานข้อมูลเมื่อ verified เป็น true
       await Recipient.findOneAndUpdate(
         { userId: userId },
         { $set: { verified: true } },
         { new: true }
       );
     }
-    res.status(200).json(recipient);
+    res.status(200).json({
+      recipientId: recipient.id,
+      verified: recipient.verified,
+      active: recipient.active,
+    });
   } catch (error) {
     console.error("Error fetching recipient:", error);
     res.status(500).json({ error: error.message });
