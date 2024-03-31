@@ -49,7 +49,7 @@ const charge = async (req, res) => {
     if (!image) {
       return res.status(404).json({ error: "Image not found" });
     }
-    console.log("image", image.price)
+    
     const charge = await omiseClient.charges.create({
       amount: image.price * 100,
       currency: "THB",

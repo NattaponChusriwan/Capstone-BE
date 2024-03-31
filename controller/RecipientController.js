@@ -156,7 +156,6 @@ const getRecipient = async (req, res) => {
     res.status(200).json({
       recipientId: recipient.id,
       name: recipient.name,
-      type: recipient.type,
       active: recipient.active,
       verified: recipient.verified,
       bank_account: {

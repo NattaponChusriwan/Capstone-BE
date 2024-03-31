@@ -92,7 +92,7 @@ const createImage = async (req, res) => {
       }
       categoryIDs.push(categoryID);
     }
-    if (req.body.sale !== false && req.body.sale !== null) {
+    if (req.body.sale) {
       if (user.recipientId == null) {
         return res.status(400).json({
           success: false,
@@ -105,7 +105,7 @@ const createImage = async (req, res) => {
         });
       } 
     }
-    if(req.body.sale !== false && req.body.sale !== null){
+    if(req.body.sale){
       const recipientVerified = await recipient.findOne({ userId: userId });
         if (!recipientVerified.verified) {
           return res.status(400).json({
@@ -113,15 +113,13 @@ const createImage = async (req, res) => {
             message: "Recipient not verified",
           });
     }}
-
-    
-    
-    
-  
+    const resizedImageBuffer = await sharp(imageBuffer)
+    .resize({ width: 800, height: 600, fit: 'inside' }) // Adjust the width and height as needed
+    .toBuffer();
     const filename = `${Date.now()}_${req.file.originalname}`;
     const fileRef = ref(storageRef, `images/images/${userId}/${filename}`);
     const metadata = { contentType: req.file.mimetype };
-    await uploadBytesResumable(fileRef, imageBuffer, metadata);
+    await uploadBytesResumable(fileRef, resizedImageBuffer, metadata);
     const downloadURL = await getDownloadURL(fileRef);
     const image = new Image({
       userId: userId,
