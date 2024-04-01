@@ -258,7 +258,7 @@ const updateUser = async (req, res) => {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: "Error updating profile",
+      message: "error to update user",
     });
   }
 };
