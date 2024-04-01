@@ -66,8 +66,8 @@ const registerUser = async (req, res) => {
       token: jwt.sign({ userId: newUser._id }, process.env.ACCESS_TOKEN_SECRET),
     });
     await token.save();
-    const url = `${process.env.BASE_URL}/api/user/verify/${newUser._id}/${token.token}`
-    // const url = `http://localhost:8080/api/user/verify/${newUser._id}/${token.token}`;
+    // const url = `${process.env.BASE_URL}/api/user/verify/${newUser._id}/${token.token}`
+    const url = `http://localhost:8080/api/user/verify/${newUser._id}/${token.token}`;
     console.log(url);
     await sendEmail(newUser.email, "Verify your email", url);
     res.send("An Email sent to your account please verify");
@@ -152,13 +152,7 @@ const refreshTokens = async (req, res) => {
 };
 const updateUser = async (req, res) => {
   try {
-    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-    if (!allowedTypes.includes(req.file.mimetype)) {
-      return res.status(400).json({
-        success: false,
-        message: "Only JPEG and PNG files are allowed",
-      });
-    }
+    
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
     const token = req.headers.authorization;
     
@@ -200,6 +194,13 @@ const updateUser = async (req, res) => {
       username = req.body.username;
     }
     if (req.file) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        message: "Only JPEG and PNG files are allowed",
+      });
+    }
       const imageBuffer = req.file.buffer;
       const [resultInappropriate] = await client.safeSearchDetection(
         req.file.buffer
