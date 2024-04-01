@@ -152,13 +152,7 @@ const refreshTokens = async (req, res) => {
 };
 const updateUser = async (req, res) => {
   try {
-    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-    if (!allowedTypes.includes(req.file.mimetype)) {
-      return res.status(400).json({
-        success: false,
-        message: "Only JPEG and PNG files are allowed",
-      });
-    }
+    
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
     const token = req.headers.authorization;
     
@@ -200,6 +194,13 @@ const updateUser = async (req, res) => {
       username = req.body.username;
     }
     if (req.file) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        message: "Only JPEG and PNG files are allowed",
+      });
+    }
       const imageBuffer = req.file.buffer;
       const [resultInappropriate] = await client.safeSearchDetection(
         req.file.buffer
@@ -257,7 +258,7 @@ const updateUser = async (req, res) => {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: "Error updating profile",
+      message: "error to update user",
     });
   }
 };
