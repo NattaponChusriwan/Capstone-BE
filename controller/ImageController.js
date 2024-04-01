@@ -182,14 +182,34 @@ const updateImage = async (req, res) => {
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
     const userIdString = updateObject.userId.toString();
-
+    const user = await User.findById(userId)
     if (userIdString !== userId) {
       return res.status(401).json({
         success: false,
         message: "You don't have permission",
       });
     }
-
+    if (req.body.sale) {
+      if (user.recipientId == null) {
+        return res.status(400).json({
+          success: false,
+          message: "User doesn't have a recipientId",
+        });
+      } else if (req.body.price < 40 || req.body.price > 150000) {
+        return res.status(400).json({
+          success: false,
+          message: "Price must be greater than 40 or less than 150000",
+        });
+      } 
+    }
+    if(req.body.sale){
+      const recipientVerified = await recipient.findOne({ userId: userId });
+        if (!recipientVerified.verified) {
+          return res.status(400).json({
+            success: false,
+            message: "Recipient not verified",
+          });
+    }}
     let categoryIDs = [];
     if (req.body.category) {
       const categories = req.body.category; // Assuming categories are sent as an array
