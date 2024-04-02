@@ -37,6 +37,7 @@ const getPaginatedImages = async (req, res) => {
       title: image.title,
       sale: image.sale,
       description: image.description,
+      recipient: image.recipient,
       image: image.image,
       price: image.price,
       category: image.category,

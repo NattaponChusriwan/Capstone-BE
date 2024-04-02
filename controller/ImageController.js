@@ -236,12 +236,19 @@ const updateImage = async (req, res) => {
     } else {
       categoryIDs = updateObject.category;
     }
-    console.log(req.body.sale)
+    let price = req.body.price;
+    let sale = req.body.sale;
+    if (!req.body.sale) {
+      price = null
+      sale = false
+    }
+
     const updateData = {
       title: req.body.title,
       description: req.body.description,
-      sale: req.body.sale,
-      price: req.body.price,
+      sale: sale,
+      price: price,
+      recipientId: user.recipientId,
       category: categoryIDs, 
       updateTime: new Date(),
     };
@@ -251,15 +258,25 @@ const updateImage = async (req, res) => {
       updateData,
       { new: true }
     );
-    if (req.body.sale) {
-      const saleDeatil = new SaleDetail({
-        userId: userId,
-        imageId: updatedImage._id,
-        image: updatedImage.image,
-        title: updatedImage.title,
-        price: updatedImage.price,
-      });
-      const savedSaleDetail = await saleDeatil.save();
+    if (req.body.sale !== updateObject.sale) {
+      // If sale status has changed, create a new SaleDetail
+      if (req.body.sale) {
+        const saleDeatil = new SaleDetail({
+          userId: userId,
+          imageId: updatedImage._id,
+          image: updatedImage.image,
+          title: updatedImage.title,
+          price: updatedImage.price,
+        });
+        const savedSaleDetail = await saleDeatil.save();
+      }
+    }
+    if(req.body.price !== updateObject.price){
+      const saleDetail = await SaleDetail.findOne({ imageId: updatedImage._id });
+      if (saleDetail) {
+        saleDetail.price = updatedImage.price;
+        await saleDetail.save();
+      }
     }
     res.json({
       success: true,
@@ -367,6 +384,7 @@ const getUserImages = async (req, res) => {
       title: image.title,
       sale: image.sale,
       description: image.description,
+      recipientId: image.recipientId,
       image: image.image,
       price: image.price,
       category: image.category ? image.category.map((cat) => cat._id) : null,
