@@ -237,11 +237,11 @@ const updateImage = async (req, res) => {
       // If no category is sent, use the existing categories associated with the image
       categoryIDs = updateObject.category;
     }
-
+    console.log(req.body.sale)
     const updateData = {
       title: req.body.title,
       description: req.body.description,
-      sale: req.body.sales,
+      sale: req.body.sale,
       price: req.body.price,
       category: categoryIDs, // Assuming your Image model has a field named 'categories' to store category IDs
       updateTime: new Date(),
