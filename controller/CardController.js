@@ -37,7 +37,6 @@ const tokenCard = async (req, res) => {
     });
     const existingCard = await Card.findOne({ userId: userId, number: req.body.number });
     if (existingCard) {
-      // Check if the card data is the same as the existing one
       const isSameCardData = (
         existingCard.name === req.body.name &&
         existingCard.expiration_month === req.body.expiration_month &&

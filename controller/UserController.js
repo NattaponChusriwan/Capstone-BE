@@ -102,8 +102,6 @@ const loginUser = async (req, res) => {
     
     findUser.refresh = refresh_token;
     await findUser.save();
-    
-    // Exclude password field from the response
     const { password: hashedPassword, ...user } = findUser.toObject();
     
     res.status(200).json({

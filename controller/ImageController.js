@@ -114,7 +114,7 @@ const createImage = async (req, res) => {
           });
     }}
     const resizedImageBuffer = await sharp(imageBuffer)
-    .resize({ width: 800, height: 600, fit: 'inside' }) // Adjust the width and height as needed
+    .resize({ width: 800, height: 600, fit: 'inside' }) 
     .toBuffer();
     const filename = `${Date.now()}_${req.file.originalname}`;
     const fileRef = ref(storageRef, `images/images/${userId}/${filename}`);
@@ -213,7 +213,7 @@ const updateImage = async (req, res) => {
    
     let categoryIDs = [];
     if (req.body.category) {
-      const categories = req.body.category; // Assuming categories are sent as an array
+      const categories = req.body.category; 
 
       categoryIDs = await Promise.all(
         categories.map(async (categoryName) => {
@@ -234,7 +234,6 @@ const updateImage = async (req, res) => {
         })
       );
     } else {
-      // If no category is sent, use the existing categories associated with the image
       categoryIDs = updateObject.category;
     }
     console.log(req.body.sale)
@@ -243,7 +242,7 @@ const updateImage = async (req, res) => {
       description: req.body.description,
       sale: req.body.sale,
       price: req.body.price,
-      category: categoryIDs, // Assuming your Image model has a field named 'categories' to store category IDs
+      category: categoryIDs, 
       updateTime: new Date(),
     };
 
