@@ -210,6 +210,7 @@ const updateImage = async (req, res) => {
             message: "Recipient not verified",
           });
     }}
+   
     let categoryIDs = [];
     if (req.body.category) {
       const categories = req.body.category; // Assuming categories are sent as an array
@@ -251,7 +252,16 @@ const updateImage = async (req, res) => {
       updateData,
       { new: true }
     );
-
+    if (req.body.sale) {
+      const saleDeatil = new SaleDetail({
+        userId: userId,
+        imageId: updatedImage._id,
+        image: updatedImage.image,
+        title: updatedImage.title,
+        price: updatedImage.price,
+      });
+      const savedSaleDetail = await saleDeatil.save();
+    }
     res.json({
       success: true,
       message: "File updated successfully",
