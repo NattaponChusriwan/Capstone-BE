@@ -1,13 +1,13 @@
 const mongoose = require("mongoose");
 
-const orderSchema = new mongoose.Schema({
+const saleSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
-  sellerId:{
+  imageId:{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Image",
   },
   image: {
     type: String,
@@ -18,15 +18,20 @@ const orderSchema = new mongoose.Schema({
   price: {
     type: Number,
   },
-  status: {
-    type: String,
+  amount: {
+    type: Number,
+    default: 0,
   },
-  createdAt: {
+  total:{
+    type: Number,
+    default: 0,
+  },
+  createdAt:{
     type: Date,
     default: Date.now,
-  },
+  }
 },
 { versionKey: false }
 );
 
-module.exports = mongoose.model("Order", orderSchema);
+module.exports = mongoose.model("Sale", saleSchema);

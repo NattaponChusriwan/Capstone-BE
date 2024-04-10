@@ -5,9 +5,10 @@ const Category = require("../Schema/CategorySchema");
 const User = require("../Schema/UserSchema");
 const mongoose = require("mongoose");
 const Order = require("../Schema/OrderDetailSchema");
-const Sale = require("../Schema/SaleDetailSchema");
+const Sale = require("../Schema/SaleSchema");
 const Omise = require("omise");
 const jwt = require("jsonwebtoken");
+const SaleDetail = require("../Schema/SaleDetailSchema");
 const dotenv = require("dotenv");
 dotenv.config();
 const { initializeApp } = require("firebase/app");
@@ -101,6 +102,11 @@ const charge = async (req, res) => {
       { $inc: { amount: 1, total: image.price * 0.9 } },
       { new: true, upsert: true }
     );
+    const saleDeatil = new SaleDetail({
+      imageId: imageId,
+      price: image.price,
+    });
+    await saleDeatil.save();
     sendConfirmationPayment(user.email, newDownloadURL);
     res.status(200).json({ charge, transfer, savedOrder});
   } catch (error) {
@@ -145,11 +151,15 @@ const promptpay = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 }
+let webhookStatus = null
 const webhooks = async (req, res) => {
   try {
-    const { data } = req.body;
-    console.log(req.body)
-    
+    const { data, key } = req.body;
+    console.log("Webhook body:", req.body);
+    if (key === "charge.complete") {
+      webhookStatus = data.status
+      console.log("Webhook received:", webhookStatus)
+    }
     if (data.status === "successful") {
       const image = await Image.findById(promptpayProductId);
       const userId = await User.findById(user);
@@ -192,25 +202,42 @@ const webhooks = async (req, res) => {
       { $inc: { amount: 1, total: image.price * 0.9 } },
       { new: true, upsert: true }
     );
+    const saleDeatil = new SaleDetail({
+      imageId: promptpayProductId,
+      price: image.price,
+    });
+    await saleDeatil.save();
     sendConfirmationPayment(userId.email, newDownloadURL);
       res.status(200).json({ charge, transfer, savedOrder });
       return;
     }
     if (data.status === "failed") {
-      res.status(200).json("Failed");
+      res.status(400).json("Failed");
       return;}
     if(data.status === "expired"){
-      res.status(200).json("Qr code expired");
+      res.status(400).json("Qr code expired");
       return;
-    }else{
-      res.redirect(`http://capstone23.sit.kmutt.ac.th/tt2/order`);
     }
   } catch (error) {
     console.error("Error processing webhook:", error);
     res.status(500).json({ error: error.message });
   }
 }
+const getWebhookStatus = async (req, res) => {
+  if(webhookStatus === null){
+    res.status(402).json({message : "No payment yet"});
+  }
+  if(webhookStatus === "successful"){
+    res.status(200).json({message : "Payment successful"});
+  }
+  if(webhookStatus === "expired"){
+    res.status(402).json({message : "Payment expired"});
+  }
+  if(webhookStatus === "failed"){
+    res.status(402).json({message : "Payment failed"});
+  }
+}
 
 module.exports = {
-  charge,promptpay, webhooks
+  charge,promptpay, webhooks,getWebhookStatus
 };
