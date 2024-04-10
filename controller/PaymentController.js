@@ -24,6 +24,7 @@ initializeApp(config.firebaseConfig);
 const storage = getStorage();
 const storageRef = ref(storage);
 const sharp = require("sharp");
+const {sendConfirmationPayment} = require("../middleware/sendEmail");
 
 const omiseClient = new Omise({
   publicKey: process.env.OMISE_PUBLIC_KEY,
@@ -43,6 +44,7 @@ const charge = async (req, res) => {
     }
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
+    const user = await User.findById(userId);
 
     const { imageId } = req.body;
     const image = await Image.findById(imageId);
@@ -56,6 +58,9 @@ const charge = async (req, res) => {
       recipient: image.recipientId,
       card: req.body.cardToken,
     });
+    if(charge.failure_code !=  null){
+      return res.status(402).json({ error: charge.failure_message });
+    }
     const transfer = await omiseClient.transfers.create({
       amount: image.price * 100 * 0.9,
       currency: "THB",
@@ -90,19 +95,122 @@ const charge = async (req, res) => {
     });
 
     const savedOrder = await order.save();
+   
     const sale = await Sale.findOneAndUpdate(
       { imageId: imageId },
       { $inc: { amount: 1, total: image.price * 0.9 } },
       { new: true, upsert: true }
     );
-  
-    res.status(200).json({ charge, transfer, savedOrder });
+    sendConfirmationPayment(user.email, newDownloadURL);
+    res.status(200).json({ charge, transfer, savedOrder});
   } catch (error) {
     console.error("Error processing payment:", error);
     res.status(500).json({ error: error.message });
   }
 };
+let promptpayProductId = {}
+let user = {}
+const promptpay = async (req, res) => {
+  try {
+    const secretKey = process.env.ACCESS_TOKEN_SECRET;
+    const token = req.headers.authorization;
+    if (!token) {
+      return res.status(401).json({ error: "Missing Authorization header" });
+    }
+    const actualToken = token.split(" ")[1];
+    const decodedTokenExpire = jwt.decode(actualToken);
+    if (decodedTokenExpire.exp < Date.now() / 1000) {
+      return res.status(401).json({ error: "Token expired" });
+    }
+    const decoded = jwt.verify(actualToken, secretKey);
+    const userId = decoded.userId;
+
+    const { imageId } = req.body;
+    const image = await Image.findById(imageId);
+    if (!image) {
+      return res.status(404).json({ error: "Image not found" });
+    }
+    const charge = await omiseClient.charges.create({
+      amount: image.price * 100,
+      currency: "THB",
+      source: {
+        type: "promptpay"
+      }
+    });
+    promptpayProductId = imageId
+    user = userId
+    res.status(200).json({  charge,scannableCodeDownloadUri: charge.source.scannable_code.download_uri });
+  } catch (error) {
+    console.error("Error processing payment:", error);
+    res.status(500).json({ error: error.message });
+  }
+}
+const webhooks = async (req, res) => {
+  try {
+    const { data } = req.body;
+    console.log(req.body)
+    
+    if (data.status === "successful") {
+      const image = await Image.findById(promptpayProductId);
+      const userId = await User.findById(user);
+      const transfer = await omiseClient.transfers.create({
+        amount: image.price * 100 * 0.9,
+        currency: "THB",
+        recipient: image.recipientId,
+      });
+    const firebaseUrl = image.image;
+    const originalDownloadURL = await getDownloadURL(ref(storage, firebaseUrl));
+
+    const response = await fetch(originalDownloadURL);
+    const imageBuffer = await response.arrayBuffer();
+
+    const sharp = require("sharp");
+    const convertedImageBuffer = await sharp(imageBuffer)
+      .jpeg({ quality: 100 })
+      .toBuffer();
+
+    const newFilename = `${Date.now()}_${image.title}.jpg`;
+    const fileRef = ref(storage, `images/images/${user}/${newFilename}`);
+
+    await uploadBytes(fileRef, convertedImageBuffer, {
+      contentType: "image/jpeg",
+    });
+
+    const newDownloadURL = await getDownloadURL(fileRef);
+    const order = new Order({
+      userId: user,
+      image: newDownloadURL,
+      price: image.price,
+      status: data.status,
+      sellerId: image.userId,
+    });
+
+    const savedOrder = await order.save();
+   
+    const sale = await Sale.findOneAndUpdate(
+      { imageId: promptpayProductId },
+      { $inc: { amount: 1, total: image.price * 0.9 } },
+      { new: true, upsert: true }
+    );
+    sendConfirmationPayment(userId.email, newDownloadURL);
+      res.status(200).json({ charge, transfer, savedOrder });
+      return;
+    }
+    if (data.status === "failed") {
+      res.status(200).json("Failed");
+      return;}
+    if(data.status === "expired"){
+      res.status(200).json("Qr code expired");
+      return;
+    }else{
+      res.redirect(`http://capstone23.sit.kmutt.ac.th/tt2/order`);
+    }
+  } catch (error) {
+    console.error("Error processing webhook:", error);
+    res.status(500).json({ error: error.message });
+  }
+}
 
 module.exports = {
-  charge,
+  charge,promptpay, webhooks
 };

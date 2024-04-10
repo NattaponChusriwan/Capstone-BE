@@ -18,16 +18,22 @@ const getSaleDetail = async (req, res) => {
     }
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
-    const sale = await Sale.find({ userId: userId });
-    if (sale.length === 0) {
+    const sales = await Sale.find({ userId: userId });
+    if (sales.length === 0) {
       return res.status(404).json({
         success: false,
         message: "No sales found for this user",
       });
     }
+    let totalSales = 0
+    sales.forEach((sales) => {
+      totalSales += sales.total;
+    });
+    sale = sales.sort((a, b) => b.total - a.total);
     res.status(200).json({
       success: true,
       sale,
+      totalSales
     });
   } catch (error) {
     res.status(500).json({

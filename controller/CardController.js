@@ -35,39 +35,7 @@ const tokenCard = async (req, res) => {
         security_code: req.body.security_code,
       },
     });
-    const existingCard = await Card.findOne({ userId: userId, number: req.body.number });
-    if (existingCard) {
-      const isSameCardData = (
-        existingCard.name === req.body.name &&
-        existingCard.expiration_month === req.body.expiration_month &&
-        existingCard.expiration_year === req.body.expiration_year
-      );
-      if (isSameCardData) {
-        return res.status(200).json({ message: "Card data is the same. No update needed.", tokenId: card.id });
-      } else {
-        await Card.findOneAndUpdate(
-          { userId: userId, number: req.body.number },
-          {
-            name: req.body.name,
-            expiration_month: req.body.expiration_month,
-            expiration_year: req.body.expiration_year,
-            updateAt: Date.now()
-          }
-        );
-        return res.status(200).json({ message: "Card updated successfully", tokenId: card.id });
-      }
-    }
-    const cardSave = new Card({
-      userId: userId,
-      name: req.body.name,
-      number: req.body.number,
-      expiration_month: req.body.expiration_month,
-      expiration_year: req.body.expiration_year,
-      cardId: card.card.id,
-    });
-    await cardSave.save();
-
-    await User.findByIdAndUpdate(userId, { $addToSet: { cardId: card.card.id } });
+    
     
     res.status(200).json({ tokenId: card.id });
    
