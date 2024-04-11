@@ -1,7 +1,6 @@
 const express = require("express");
 const router = require("express").Router();
 const User = require("../Schema/UserSchema");
-const Card = require("../Schema/CardSchema");
 const Omise = require("omise");
 const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");

@@ -15,8 +15,6 @@ const sendEmail = async (email, subject, url) => {
       subject: subject,
       text: `Dear user,\n\nPlease find the following link for your reference:\n${url}\n\nBest regards,\nArt Gallery`,
     });
-
-    console.log("Email sent successfully");
   } catch (error) {
     console.error("Error sending email:", error);
   }
@@ -40,7 +38,6 @@ const sendConfirmationPayment = async (email, orderUrl) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log("Email sent");
   } catch (error) {
     console.error("Error sending email:", error);
   }
@@ -63,7 +60,6 @@ const sendTranfer = async (email, orderUrl) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log("Email sent");
   } catch (error) {
     console.error("Error sending email:", error);
   }

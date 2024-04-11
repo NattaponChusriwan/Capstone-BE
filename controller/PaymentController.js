@@ -52,7 +52,7 @@ const charge = async (req, res) => {
     if (!image) {
       return res.status(404).json({ error: "Image not found" });
     }
-    
+    const seller = await User.findById(image.userId);
     const charge = await omiseClient.charges.create({
       amount: image.price * 100,
       currency: "THB",
@@ -92,7 +92,8 @@ const charge = async (req, res) => {
       image: newDownloadURL,
       price: image.price,
       status: charge.status,
-      sellerId: image.userId,
+      seller: seller.username,
+      title: image.title,
     });
 
     const savedOrder = await order.save();
@@ -192,7 +193,8 @@ const webhooks = async (req, res) => {
       image: newDownloadURL,
       price: image.price,
       status: data.status,
-      sellerId: image.userId,
+      seller: seller.username,
+      title: image.title,
     });
 
     const savedOrder = await order.save();

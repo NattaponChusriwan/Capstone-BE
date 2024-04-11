@@ -5,9 +5,8 @@ const orderSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
-  sellerId:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+  seller:{
+    type: String,
   },
   image: {
     type: String,
