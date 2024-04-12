@@ -156,13 +156,15 @@ let webhookStatus = null
 const webhooks = async (req, res) => {
   try {
     const { data, key } = req.body;
-    console.log("Webhook body:", req.body);
     if (key === "charge.complete") {
       webhookStatus = data.status
       console.log("Webhook received:", webhookStatus)
     }
     if (data.status === "successful") {
       const image = await Image.findById(promptpayProductId);
+      if (!image) {
+        return res.status(404).json({ error: "Is not qr" });
+      }
       const userId = await User.findById(user);
       const transfer = await omiseClient.transfers.create({
         amount: image.price * 100 * 0.9,

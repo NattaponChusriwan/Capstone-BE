@@ -4,6 +4,7 @@ const User = require("../Schema/UserSchema");
 const Recipient = require("../Schema/RecipientSchema");
 const Omise = require("omise");
 const dotenv = require("dotenv");
+const Image = require("../Schema/ImageSchema");
 const jwt = require("jsonwebtoken");
 dotenv.config();
 const omiseClient = new Omise({
