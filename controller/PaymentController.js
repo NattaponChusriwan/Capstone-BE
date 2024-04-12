@@ -156,16 +156,17 @@ let webhookStatus = null
 const webhooks = async (req, res) => {
   try {
     const { data, key } = req.body;
+    const image = await Image.findById(promptpayProductId);
+    const userId = await User.findById(user);
+      const seller = await User.findById(image.userId);
     if (key === "charge.complete") {
       webhookStatus = data.status
       console.log("Webhook received:", webhookStatus)
     }
     if (data.status === "successful") {
-      const image = await Image.findById(promptpayProductId);
       if (!image) {
         return res.status(404).json({ error: "Is not qr" });
       }
-      const userId = await User.findById(user);
       const transfer = await omiseClient.transfers.create({
         amount: image.price * 100 * 0.9,
         currency: "THB",
@@ -240,6 +241,7 @@ const getWebhookStatus = async (req, res) => {
   if(webhookStatus === "failed"){
     res.status(402).json({message : "Payment failed"});
   }
+  webhookStatus = null
 }
 
 module.exports = {
