@@ -149,7 +149,11 @@ const promptpay = async (req, res) => {
     });
     promptpayProductId = imageId
     user = userId
-    res.status(200).json({Qr_uri : charge.source.scannable_code.image.download_uri});
+    res.status(200).json({
+      Qr_uri: charge.source.scannable_code.image.download_uri,
+      expires_at: charge.expires_at
+  });
+  
   } catch (error) {
     console.error("Error processing payment:", error);
     res.status(500).json({ error: error.message });
