@@ -344,6 +344,7 @@ const deleteImage = async (req, res) => {
       });
       const deleteSale = await Sale.findOneAndDelete({ imageId: req.body.imageId });
     }
+    
   } catch (error) {
     console.error(error);
     res.status(400).json({
