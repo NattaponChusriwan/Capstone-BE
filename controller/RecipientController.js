@@ -122,6 +122,11 @@ const updateRecipient = async (req, res) => {
         new: true,
       }
     );
+    const updateResult  = await Image.updateMany(
+      { userId: userId },
+      { $set: { recipientId: recipient.id } },
+      { new: true }
+    );
     res.status(200).json(updatedRecipient);
   } catch (error) {
     console.error("Error updating recipient:", error);
