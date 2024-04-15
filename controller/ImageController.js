@@ -4,7 +4,7 @@ const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 const Image = require("../Schema/ImageSchema");
 const Category = require("../Schema/CategorySchema");
-const SaleDetail = require("../Schema/SaleSchema");
+const Sale = require("../Schema/SaleSchema");
 const mongoose = require("mongoose");
 const User = require("../Schema/UserSchema");
 const jwt = require("jsonwebtoken");
@@ -46,7 +46,7 @@ const createImage = async (req, res) => {
     }
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
-    const user = await User.findById(userId)
+    const user = await User.findById(userId);
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -103,19 +103,20 @@ const createImage = async (req, res) => {
           success: false,
           message: "Price must be greater than 40 or less than 150000",
         });
-      } 
+      }
     }
-    if(req.body.sale){
+    if (req.body.sale) {
       const recipientVerified = await recipient.findOne({ userId: userId });
-        if (!recipientVerified.verified) {
-          return res.status(400).json({
-            success: false,
-            message: "Recipient not verified",
-          });
-    }}
+      if (!recipientVerified.verified) {
+        return res.status(400).json({
+          success: false,
+          message: "Recipient not verified",
+        });
+      }
+    }
     const resizedImageBuffer = await sharp(imageBuffer)
-    .resize({ width: 800, height: 600, fit: 'inside' }) 
-    .toBuffer();
+      .resize({ width: 800, height: 600, fit: "inside" })
+      .toBuffer();
     const filename = `${Date.now()}_${req.file.originalname}`;
     const fileRef = ref(storageRef, `images/images/${userId}/${filename}`);
     const metadata = { contentType: req.file.mimetype };
@@ -129,24 +130,24 @@ const createImage = async (req, res) => {
       sale: req.body.sale,
       price: req.body.price,
       category: categoryIDs,
-      recipientId: user.recipientId
+      recipientId: user.recipientId,
     });
 
     const savedImage = await image.save();
     if (req.body.sale) {
-      const saleDeatil = new SaleDetail({
+      const saleDetail = new Sale({
         userId: userId,
         imageId: savedImage._id,
         image: savedImage.image,
         title: savedImage.title,
         price: savedImage.price,
       });
-      const savedSaleDetail = await saleDeatil.save();
+      const savedSaleDetail = await saleDetail.save();
     }
     res.json({
       success: true,
       message: "Image saved successfully",
-      savedImage
+      savedImage,
     });
   } catch (err) {
     console.error(err);
@@ -182,7 +183,7 @@ const updateImage = async (req, res) => {
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
     const userIdString = updateObject.userId.toString();
-    const user = await User.findById(userId)
+    const user = await User.findById(userId);
     if (userIdString !== userId) {
       return res.status(401).json({
         success: false,
@@ -200,20 +201,21 @@ const updateImage = async (req, res) => {
           success: false,
           message: "Price must be greater than 40 or less than 150000",
         });
-      } 
+      }
     }
-    if(req.body.sale){
+    if (req.body.sale) {
       const recipientVerified = await recipient.findOne({ userId: userId });
-        if (!recipientVerified.verified) {
-          return res.status(400).json({
-            success: false,
-            message: "Recipient not verified",
-          });
-    }}
-   
+      if (!recipientVerified.verified) {
+        return res.status(400).json({
+          success: false,
+          message: "Recipient not verified",
+        });
+      }
+    }
+
     let categoryIDs = [];
     if (req.body.category) {
-      const categories = req.body.category; 
+      const categories = req.body.category;
 
       categoryIDs = await Promise.all(
         categories.map(async (categoryName) => {
@@ -239,8 +241,8 @@ const updateImage = async (req, res) => {
     let price = req.body.price;
     let sale = req.body.sale;
     if (!req.body.sale) {
-      price = null
-      sale = false
+      price = null;
+      sale = false;
     }
 
     const updateData = {
@@ -249,7 +251,7 @@ const updateImage = async (req, res) => {
       sale: sale,
       price: price,
       recipientId: user.recipientId,
-      category: categoryIDs, 
+      category: categoryIDs,
       updateTime: new Date(),
     };
 
@@ -271,8 +273,10 @@ const updateImage = async (req, res) => {
         const savedSaleDetail = await saleDeatil.save();
       }
     }
-    if(req.body.price !== updateObject.price){
-      const saleDetail = await SaleDetail.findOne({ imageId: updatedImage._id });
+    if (req.body.price !== updateObject.price) {
+      const saleDetail = await SaleDetail.findOne({
+        imageId: updatedImage._id,
+      });
       if (saleDetail) {
         saleDetail.price = updatedImage.price;
         await saleDetail.save();
@@ -313,7 +317,7 @@ const deleteImage = async (req, res) => {
     const userId = decoded.userId;
     const image = await Image.findById(req.body.imageId);
     const imageIdString = image.userId.toString();
-    console.log(imageIdString, userId);
+    const checkSale = await Sale.findOne({ imageId: req.body.imageId });
     if (imageIdString !== userId) {
       return res.status(401).json({
         success: false,
@@ -333,11 +337,13 @@ const deleteImage = async (req, res) => {
       success: true,
       message: "Object deleted successfully",
     });
-
-    const imageRef = ref(storage, deletedObject.image);
-    deleteObject(imageRef).then(() => {
-      console.log("Delete success for delete image");
-    });
+    if (checkSale.amount === 0) {
+      const imageRef = ref(storage, deletedObject.image);
+      deleteObject(imageRef).then(() => {
+        console.log("Delete success for delete image");
+      });
+      const deleteSale = await Sale.findOneAndDelete({ imageId: req.body.imageId });
+    }
   } catch (error) {
     console.error(error);
     res.status(400).json({
@@ -390,7 +396,6 @@ const getUserImages = async (req, res) => {
       category: image.category ? image.category.map((cat) => cat._id) : null,
       updateTime: image.uploadTime,
     }));
-    
 
     res.json({
       success: true,
