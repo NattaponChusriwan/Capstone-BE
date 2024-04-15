@@ -10,6 +10,7 @@ const PaymentRouter = require("./routers/PaymentRouter");
 const CardRouter = require("./routers/CardRouter");
 const OrderRouter = require("./routers/OrderDetailRouter"); 
 const SaleRouter = require("./routers/SaleDetailRouter");
+const DownloadRouter = require("./routers/DownloadRouter");
 const bodyParser = require('body-parser');
 const { jwtValidate } = require("./middleware/jwt");
 require("dotenv").config();
@@ -30,6 +31,7 @@ app.use("/api/card", CardRouter);
 app.use("/api/order", OrderRouter);
 app.use("/api/payment", PaymentRouter);
 app.use("/api/sale", SaleRouter);
+app.use("/api", DownloadRouter);
 
 const PORT = 8080;
 app.listen(PORT, function () {
