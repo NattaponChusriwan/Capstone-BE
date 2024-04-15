@@ -60,7 +60,8 @@ const charge = async (req, res) => {
       card: req.body.cardToken,
     });
     if(charge.failure_code !=  null){
-      return res.status(402).json({ error: charge.failure_message });
+      const capitalizedError = charge.failure_message.charAt(0).toUpperCase() + charge.failure_message.slice(1);
+      return res.status(402).json({ error: capitalizedError});
     }
     const transfer = await omiseClient.transfers.create({
       amount: image.price * 100 * 0.9,
