@@ -5,6 +5,9 @@ const saleDetailSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Image",
   },
+  buyerName:{
+    type:String
+  },
   price: {
     type: Number,
   },

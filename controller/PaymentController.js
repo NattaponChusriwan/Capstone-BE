@@ -106,6 +106,7 @@ const charge = async (req, res) => {
     const saleDeatil = new SaleDetail({
       imageId: imageId,
       price: image.price,
+      buyerName: user.username
     });
     await saleDeatil.save();
     sendConfirmationPayment(user.email, newDownloadURL);
@@ -217,6 +218,7 @@ const webhooks = async (req, res) => {
     const saleDeatil = new SaleDetail({
       imageId: promptpayProductId,
       price: image.price,
+      buyerName: userId.username
     });
     await saleDeatil.save();
     sendConfirmationPayment(userId.email, newDownloadURL);
