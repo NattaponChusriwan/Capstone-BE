@@ -2,18 +2,24 @@ const Image = require("../Schema/ImageSchema");
 const crypto = require('crypto');
 const dotenv = require("dotenv");
 dotenv.config();
-const secretKey = process.env.IMAGE_SECRET;
+const encryptionKey = Buffer.from(process.env.IMAGE_SECRET, 'base64');
+const iv = Buffer.from(process.env.IV, 'base64');
+
+// Encrypt the Firebase URL
 function encrypt(url) {
-  const cipher = crypto.createCipher('aes-256-cbc', secretKey);
-  let encrypted = cipher.update(url, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  return encrypted;
+    const cipher = crypto.createCipheriv('aes-256-cbc', encryptionKey, iv);
+    let encrypted = cipher.update(url, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return encrypted;
 }
+
+
 const getPaginatedImages = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 8;
   const skip = (page - 1) * limit;
   const categoryIds = req.query.categoryId;
+
   try {
     let query = {};
     if (categoryIds && Array.isArray(categoryIds)) {
@@ -68,6 +74,7 @@ const getPaginatedImages = async (req, res) => {
     });
   }
 };
+
   const getImage = async (req, res) => {
     try {
       const objectId = req.params.id;
@@ -98,6 +105,7 @@ const getPaginatedImages = async (req, res) => {
         updateTime: uploadedImage.updateTime,
       };
       res.json(formattedImage);
+      console.log(decryptedURL);
     } catch (error) {
       console.error(error);
       res.status(500).json({
