@@ -140,7 +140,7 @@ const promptpay = async (req, res) => {
       return res.status(404).json({ error: "Image not found" });
     }
     const expirationDate = new Date();
-    expirationDate.setMinutes(expirationDate.getMinutes() + 1);
+    expirationDate.setMinutes(expirationDate.getMinutes() + 5);
     const charge = await omiseClient.charges.create({
       amount: image.price * 100,
       currency: "THB",

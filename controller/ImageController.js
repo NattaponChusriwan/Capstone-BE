@@ -337,7 +337,7 @@ const deleteImage = async (req, res) => {
       success: true,
       message: "Object deleted successfully",
     });
-    if (checkSale.amount === 0) {
+    if (!checkSale) {
       const imageRef = ref(storage, deletedObject.image);
       deleteObject(imageRef).then(() => {
         console.log("Delete success for delete image");

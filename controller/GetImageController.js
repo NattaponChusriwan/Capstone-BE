@@ -1,5 +1,14 @@
 const Image = require("../Schema/ImageSchema");
-
+const crypto = require('crypto');
+const dotenv = require("dotenv");
+dotenv.config();
+const secretKey = process.env.IMAGE_SECRET;
+function encrypt(url) {
+  const cipher = crypto.createCipher('aes-256-cbc', secretKey);
+  let encrypted = cipher.update(url, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return encrypted;
+}
 const getPaginatedImages = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 8;
@@ -31,6 +40,7 @@ const getPaginatedImages = async (req, res) => {
         message: 'No images found',
       });
     }
+
     const AllImages = findImages.map((image) => ({
       _id: image._id,
       username: image.userId ? image.userId.username : null,
@@ -38,7 +48,7 @@ const getPaginatedImages = async (req, res) => {
       sale: image.sale,
       description: image.description,
       recipient: image.recipient,
-      image: image.image,
+      image: encrypt(image.image),
       price: image.price,
       category: image.category,
       updateTime: image.uploadTime,
@@ -80,7 +90,7 @@ const getPaginatedImages = async (req, res) => {
         _id: uploadedImage._id,
         username: uploadedImage.userId ? uploadedImage.userId.username : null,
         title: uploadedImage.title,
-        image: uploadedImage.image,
+        image: encrypt(uploadedImage.image),
         description: uploadedImage.description,
         sale: uploadedImage.sale,
         price: uploadedImage.price,
