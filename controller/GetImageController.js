@@ -1,19 +1,12 @@
 const Image = require("../Schema/ImageSchema");
-const crypto = require('crypto');
+const CryptoJS = require("crypto-js");
 const dotenv = require("dotenv");
 dotenv.config();
-const encryptionKey = Buffer.from(process.env.IMAGE_SECRET, 'base64');
-const iv = Buffer.from(process.env.IV, 'base64');
 
-// Encrypt the Firebase URL
-function encrypt(url) {
-    const cipher = crypto.createCipheriv('aes-256-cbc', encryptionKey, iv);
-    let encrypted = cipher.update(url, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    return encrypted;
+const secretKey = process.env.IMAGE_SECRET;
+function cipherUrl(url) {
+return CryptoJS.AES.encrypt(url, secretKey).toString();
 }
-
-
 const getPaginatedImages = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 8;
@@ -53,8 +46,8 @@ const getPaginatedImages = async (req, res) => {
       title: image.title,
       sale: image.sale,
       description: image.description,
-      recipient: image.recipient,
-      image: encrypt(image.image),
+      recipientId: image.recipientId,
+      image: cipherUrl(image.image),
       price: image.price,
       category: image.category,
       updateTime: image.uploadTime,
@@ -74,7 +67,11 @@ const getPaginatedImages = async (req, res) => {
     });
   }
 };
-
+function description(url){
+  const byte = CryptoJS.AES.decrypt(url, secretKey);
+  const originalText = byte.toString(CryptoJS.enc.Utf8);
+  return originalText;
+}
   const getImage = async (req, res) => {
     try {
       const objectId = req.params.id;
@@ -97,7 +94,8 @@ const getPaginatedImages = async (req, res) => {
         _id: uploadedImage._id,
         username: uploadedImage.userId ? uploadedImage.userId.username : null,
         title: uploadedImage.title,
-        image: encrypt(uploadedImage.image),
+        image: cipherUrl(uploadedImage.image),
+        recipientId: uploadedImage.recipientId,
         description: uploadedImage.description,
         sale: uploadedImage.sale,
         price: uploadedImage.price,
@@ -105,7 +103,8 @@ const getPaginatedImages = async (req, res) => {
         updateTime: uploadedImage.updateTime,
       };
       res.json(formattedImage);
-      console.log(decryptedURL);
+      const decryptedImageUrl = description(formattedImage.image);
+      console.log(decryptedImageUrl)
     } catch (error) {
       console.error(error);
       res.status(500).json({
