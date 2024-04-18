@@ -58,13 +58,13 @@ const getSaleDetail = async (req, res) => {
     const decoded = jwt.verify(actualToken, secretKey);
     const userId = decoded.userId;
 
-    const saleDeatil = await SaleDetail.find({imageId : req.body.imageId});
-    if(!saleDeatil){
+    const saleDetail = await SaleDetail.find({imageId : req.body.imageId});
+    if(saleDetail.length === 0){
       return res.status(404).json({ error: "SaleDetail not found" });
     }
     res.status(200).json({
       success: true,
-      saleDeatil,
+      saleDetail,
     });
     
     } catch (error) {

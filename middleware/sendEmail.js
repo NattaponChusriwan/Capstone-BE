@@ -42,26 +42,26 @@ const sendConfirmationPayment = async (email, orderUrl) => {
     console.error("Error sending email:", error);
   }
 };
-const sendTranfer = async (email, orderUrl) => {
-  try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+// const sendTranfer = async (email, orderUrl) => {
+//   try {
+//     const transporter = nodemailer.createTransport({
+//       service: 'gmail',
+//       auth: {
+//         user: process.env.EMAIL_USER,
+//         pass: process.env.EMAIL_PASS,
+//       },
+//     });
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Payment Confirmation",
-      text: `Dear customer,\n\nYour payment has been confirmed. Below is the link to your image:\n${orderUrl}\n\nBest regards,\nArt Gallery`,
-    };
+//     const mailOptions = {
+//       from: process.env.EMAIL_USER,
+//       to: email,
+//       subject: "Payment Confirmation",
+//       text: `Dear customer,\n\nYour payment has been confirmed. Below is the link to your image:\n${orderUrl}\n\nBest regards,\nArt Gallery`,
+//     };
 
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-    console.error("Error sending email:", error);
-  }
-};
+//     await transporter.sendMail(mailOptions);
+//   } catch (error) {
+//     console.error("Error sending email:", error);
+//   }
+// };
 module.exports = { sendEmail, sendConfirmationPayment } ;

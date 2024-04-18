@@ -24,7 +24,7 @@ initializeApp(config.firebaseConfig);
 const storage = getStorage();
 const storageRef = ref(storage);
 const Token = require("../Schema/TokenSchema");
-const sendEmail = require("../middleware/sendEmail");
+const {sendEmail} = require("../middleware/sendEmail");
 const registerUser = async (req, res) => {
   try {
     const { email, username, password } = req.body;
