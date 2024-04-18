@@ -94,7 +94,7 @@ const charge = async (req, res) => {
       price: image.price,
       status: charge.status,
       seller: seller.username,
-      title: image.title,
+      title: image.title
     });
 
     const savedOrder = await order.save();
@@ -167,12 +167,12 @@ const webhooks = async (req, res) => {
     const { data, key } = req.body;
     const image = await Image.findById(promptpayProductId);
     const userId = await User.findById(user);
-      const seller = await User.findById(image.userId);
+    const seller = await User.findById(image.userId);
     if (key === "charge.complete") {
       webhookStatus = data.status
       console.log("Webhook received:", webhookStatus)
     }
-    if (data.status === "successful") {
+    if (data.status === "successful" && data.source.scannable_code.type === "qr") {
       if (!image) {
         return res.status(404).json({ error: "Is not qr" });
       }
@@ -206,7 +206,7 @@ const webhooks = async (req, res) => {
       price: image.price,
       status: data.status,
       seller: seller.username,
-      title: image.title,
+      title: image.title
     });
 
     const savedOrder = await order.save();
