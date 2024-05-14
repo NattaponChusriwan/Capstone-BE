@@ -26,7 +26,7 @@ const saleSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  createdAt:{
+  createTime:{
     type: Date,
     default: Date.now,
   }

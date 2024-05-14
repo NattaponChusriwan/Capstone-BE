@@ -11,7 +11,7 @@ const saleDetailSchema = new mongoose.Schema({
   price: {
     type: Number,
   },
-  createdAt:{
+  createTime:{
     type: Date,
     default: Date.now,
   }

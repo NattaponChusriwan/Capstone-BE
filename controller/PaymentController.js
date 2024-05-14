@@ -150,6 +150,7 @@ const promptpay = async (req, res) => {
       expires_at: expirationDate.toISOString(), 
     });
     promptpayProductId = imageId
+    console.log("promptpayProductId", promptpayProductId)
     user = userId
     res.status(200).json({
       Qr_uri: charge.source.scannable_code.image.download_uri,
@@ -222,6 +223,7 @@ const webhooks = async (req, res) => {
       buyerName: userId.username
     });
     await saleDeatil.save();
+    
     sendConfirmationPayment(userId.email, newDownloadURL);
       res.status(200).json({ charge, transfer, savedOrder });
       return;

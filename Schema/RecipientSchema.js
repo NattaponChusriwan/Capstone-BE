@@ -37,11 +37,11 @@ const RecipientSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    createAt: {
+    createTime: {
       type: Date,
       default: Date.now,
     },
-    updateAt: {
+    updateTime: {
       type: Date,
       default: Date.now,
     },

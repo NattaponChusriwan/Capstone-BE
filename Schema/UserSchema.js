@@ -14,10 +14,6 @@ const userSchema = new mongoose.Schema(
     profile_image: {
       type: String,
     },
-    role: {
-      type: String,
-      default: "User",
-    },
     isVerified: {
       type: Boolean,
       default: false,

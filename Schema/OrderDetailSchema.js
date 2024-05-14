@@ -20,7 +20,7 @@ const orderSchema = new mongoose.Schema({
   status: {
     type: String,
   },
-  createdAt: {
+  createTime: {
     type: Date,
     default: Date.now,
   },
